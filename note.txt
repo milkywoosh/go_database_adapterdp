@@ -1,0 +1,21 @@
+Pemisahan adapter tiap Payment HARUS dilakukan untuk memudahkan testing.
+
+
+
+try to make adapter between PG and ORACLE
+
+
+
+=================================================
+
+Interface payment
+type PaymenProccess interface {
+    Pay(float64) string
+}
+
+misal:
+type Paypal struct{} ===> harus bikin adapter tersendiri
+func PaymentProccess() {}
+
+type Stripe struct{} ===> harus bikin adapter tersendiri
+func ChargeAmount() {}

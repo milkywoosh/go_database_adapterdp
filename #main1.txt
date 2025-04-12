@@ -1,0 +1,58 @@
+package main
+
+import (
+	"fmt"
+
+	adp "github.com/luke_design_pattern/adapterdp"
+)
+
+var PaypalPayment *adp.Paypal
+var StripePayment *adp.Stripe
+var ShopChartPaypal adp.ShoppingChart
+var ShopChartStripe adp.ShoppingChart
+
+var OraDB *adp.OracleDB = &adp.OracleDB{}
+var PgDB *adp.PostgresDB = &adp.PostgresDB{}
+
+var PaypalProc adp.PayPalProcessor = adp.PayPalProcessor{}
+var StripXProc *adp.StripeX = &adp.StripeX{}
+
+func main() {
+	fmt.Println("========================== implement adapter pattern ==========================")
+
+	StripeXAdapter := adp.NewStripeXAdapter(StripXProc)
+	a := StripeXAdapter.Pay(100.52)
+	fmt.Println(a)
+	b := PaypalProc.Pay(500.342)
+	fmt.Println(b)
+	// PaypalPaymentProcess := adp.PaymentAdapter{
+	// 	PaymentMethod: PaypalPayment,
+	// }
+
+	// StripePaymentProcess := adp.PaymentAdapter{
+	// 	PaymentMethod: StripePayment,
+	// }
+	// PaypalPaymentProcess.AdapterPaymentProcessor(100, "dollar")
+	// StripePaymentProcess.AdapterPaymentProcessor(300, "dollar")
+	// PaypalPayment = &adp.Paypal{}
+	// PayPalAdp := adp.NewPaymentAdapter(PaypalPayment)
+
+	// ShopChartPaypal = adp.NewShoppingChart(PayPalAdp)
+	// ShopChartPaypal.Checkout(100, "dollar")
+
+	// StripePayment = &adp.Stripe{}
+	// StripeAdp := adp.NewPaymentAdapter(StripePayment)
+
+	// ShopChartStripe = adp.NewShoppingChart(StripeAdp)
+	// ShopChartStripe.Checkout(1000, "rupiah")
+
+	// database
+
+	// OraDBAdaptee := adp.NewConnAdapter(OraDB)
+	// OraDBInit := adp.NewInitConnection(&OraDBAdaptee)
+	// OraDBInit.Connection()
+
+	// PgDBAdaptee := adp.NewConnAdapter(PgDB)
+	// PgDBInit := adp.NewInitConnection(&PgDBAdaptee)
+	// PgDBInit.Connection()
+}
