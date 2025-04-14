@@ -4,57 +4,29 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
-	_ "log"
 
 	_ "github.com/godror/godror"
 )
 
 func main() {
+	fmt.Println("teesss")
+	tbl := "C##BOOK_STORE"
+	pws := "Qwerty123."
+	addr := "localhost:1521/orcl"
+	libdir := "C:\\oracle\\instantclient_21_6\\windows"
+	conn_str := fmt.Sprintf("user=%s password=%s connectString=%s libDir=%s", tbl, pws, addr, libdir)
+	db, err := sql.Open("godror", conn_str)
 
-	// note: FIX GOOD CONNECTION TO ORACLE
-	db, err := sql.Open("godror", `user="C##BOOK_STORE" password="Qwerty123." connectString="localhost:1521/ORCL" libDir="C:/instantclient_21.6/windows"`)
-	db, err := sql.Open("godror", `user="C##BOOK_STORE" password="Qwerty123." connectString="localhost:1521/ORCL" libDir="C:/instantclient_21.6/windows"`)
-
-	//budimanokky93.medium.com/golang-easy-fetch-millions-of-data-using-concurrent-80716595e674
 	if err != nil {
-		cek := fmt.Sprintf("%s: ==> %v", "tess: ", err)
-		log.Fatal(cek)
+		log.Fatalf("sql.Open failed: %v", err)
+		return
 	}
 	defer db.Close()
 
-	err = db.Ping()
-	if err != nil {
-		panic(err)
+	if err := db.Ping(); err != nil {
+		log.Fatalf("DB Ping failed: %v", err)
+		return
 	}
 
-	if err != nil {
-		err := fmt.Sprintf("%s %s", "err", err.Error())
-		panic(err)
-	}
-
-	row, err := db.Query("SELECT 'Hello World' FROM dual")
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer row.Close()
-
-	for row.Next() {
-		var message string
-
-		row.Scan(&message)
-
-		fmt.Println(message)
-	}
-
-	// https://budimanokky93.medium.com/golang-easy-fetch-millions-of-data-using-concurrent-80716595e674
-
-	// rows, err := db.Query("SELECT ID FROM BU_ROLES WHERE ROWNUM <= 5")
-
-	// if err != nil {
-	// 	panic(err.Error())
-	// }
-
-	// defer rows.Close()
-
-	// doDBThingsThroughInstantClient(localDB)
+	fmt.Println("✅ Successfully connected to Oracle!")
 }
