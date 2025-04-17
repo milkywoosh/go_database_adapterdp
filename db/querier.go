@@ -5,8 +5,7 @@ import (
 )
 
 type Users struct {
-	Username string
-	Email    string
+	Username, Email, Firstname, Lastname string
 }
 
 type CreateUserTxResult struct {
@@ -14,8 +13,7 @@ type CreateUserTxResult struct {
 }
 
 type CreateUserParams struct {
-	Username string
-	Email    string
+	Username, Email, Firstname, Lastname string
 }
 
 type Querier interface {
