@@ -14,6 +14,7 @@ func main() {
 	pws := "Qwerty123."
 	addr := "localhost:1521/orcl"
 	libdir := "C:\\oracle\\instantclient_21_6\\windows"
+
 	conn_str := fmt.Sprintf("user=%s password=%s connectString=%s libDir=%s", tbl, pws, addr, libdir)
 	db, err := sql.Open("godror", conn_str)
 
@@ -29,4 +30,7 @@ func main() {
 	}
 
 	fmt.Println("✅ Successfully connected to Oracle!")
+
+	
+
 }
