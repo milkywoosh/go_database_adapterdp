@@ -19,3 +19,12 @@ func PaymentProccess() {}
 
 type Stripe struct{} ===> harus bikin adapter tersendiri
 func ChargeAmount() {}
+
+
+tbl := "C##BOOK_STORE"
+	// ORA_DB_PW_
+	pws := "Qwerty123."
+	// ORA_DB_CONN_STRING
+	addr := "localhost:1521/orcl"
+	// ORA_DB_LIB_DIR
+	libdir := "C:\\oracle\\instantclient_21_6\\windows"

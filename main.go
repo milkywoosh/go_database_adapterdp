@@ -4,19 +4,38 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"os"
+
+	dotenv "github.com/lpernett/godotenv"
+	"github.com/luke_design_pattern/config"
 
 	_ "github.com/godror/godror"
 )
 
 func main() {
-	fmt.Println("teesss")
-	tbl := "C##BOOK_STORE"
-	pws := "Qwerty123."
-	addr := "localhost:1521/orcl"
-	libdir := "C:\\oracle\\instantclient_21_6\\windows"
+	err := dotenv.Load()
+	if err != nil {
+		log.Fatalf("%v", err)
+		return
+	}
 
-	conn_str := fmt.Sprintf("user=%s password=%s connectString=%s libDir=%s", tbl, pws, addr, libdir)
-	db, err := sql.Open("godror", conn_str)
+	tbl := os.Getenv("ORA_DB_NAME")
+	pws := os.Getenv("ORA_DB_PASSWORD")
+	addr := os.Getenv("ORA_DB_CONN_STRING")
+	libdir := os.Getenv("ORA_DB_LIB_DIR")
+
+	new_ora_conn, err := config.NewCredential("ORACLE", tbl, pws, addr, libdir)
+	if err != nil {
+		log.Fatalf("%v", err)
+		return
+	}
+
+	ora_credential, err := new_ora_conn.GetConnectionString()
+	if err != nil {
+		log.Fatalf("%v", err)
+		return
+	}
+	db, err := sql.Open("godror", ora_credential)
 
 	if err != nil {
 		log.Fatalf("sql.Open failed: %v", err)
@@ -30,7 +49,5 @@ func main() {
 	}
 
 	fmt.Println("✅ Successfully connected to Oracle!")
-
-	
 
 }
