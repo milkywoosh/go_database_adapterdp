@@ -1,9 +1,13 @@
 package db
 
-import "context"
+import (
+	"context"
+
+)
 
 type CreateUserTxParams struct {
 	CreateUserParams
+	
 	AfterCreate func(user Users) error // note: diisi function APAPUN yg penting passing argument tipe Users dan return Error!
 }
 

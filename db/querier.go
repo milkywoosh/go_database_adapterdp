@@ -13,11 +13,13 @@ type CreateUserTxResult struct {
 }
 
 type CreateUserParams struct {
-	Username, Email, Firstname, Lastname string
+	Username, Email, Firstname, Lastname, Password string
 }
 
 type Querier interface {
-	CreateUser(ctx context.Context, arg CreateUserParams) (Users, error)
+	UserDo
+	PurchaseDo
+
 	// AddAccountBalance(ctx context.Context, arg AddAccountBalanceParams) (Account, error)
 	// CreateEntry(ctx context.Context, arg CreateEntryParams) (Entry, error)
 	// CreateSession(ctx context.Context, arg CreateSessionParams) (Session, error)
@@ -37,6 +39,17 @@ type Querier interface {
 	// UpdateAccount(ctx context.Context, arg UpdateAccountParams) (Account, error)
 	// UpdateUser(ctx context.Context, arg UpdateUserParams) (User, error)
 	// UpdateVerifyEmail(ctx context.Context, arg UpdateVerifyEmailParams) (VerifyEmail, error)
+}
+
+type UserDo interface {
+	CreateUser(ctx context.Context, arg CreateUserParams) (Users, error)
+}
+
+type PurchaseDo interface {
+	CreatePurchaseHistory(ctx context.Context, arg CreatePurchaseHistoryParams) (PurchaseHistory, error)
+	AddListBook(ctx context.Context, arg CreateBookToPurchaseParams) (BookToPurchase, error)
+	DeletePurchase(ctx context.Context, arg ...interface{}) error
+	FinalizePurchase() error
 }
 
 var _ Querier = (*Queries)(nil)
