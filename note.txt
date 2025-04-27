@@ -28,3 +28,7 @@ tbl := "C##BOOK_STORE"
 	addr := "localhost:1521/orcl"
 	// ORA_DB_LIB_DIR
 	libdir := "C:\\oracle\\instantclient_21_6\\windows"
+
+
+note clear test cache
+==> go clean -testcache
