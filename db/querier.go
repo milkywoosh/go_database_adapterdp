@@ -4,10 +4,6 @@ import (
 	"context"
 )
 
-type Users struct {
-	Username, Email, Firstname, Lastname string
-}
-
 type CreateUserTxResult struct {
 	Users
 }
@@ -50,6 +46,7 @@ type PurchaseDo interface {
 	AddListBook(ctx context.Context, arg CreateBookToPurchaseParams) (BookToPurchase, error)
 	DeletePurchase(ctx context.Context, arg ...interface{}) error
 	FinalizePurchase() error
+	AdjustStockBook(ctx context.Context, bookID int, corrector int) error
 }
 
 var _ Querier = (*Queries)(nil)
