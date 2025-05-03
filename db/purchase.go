@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"log"
 	"strings"
@@ -35,21 +36,6 @@ import (
 // 	]}
 
 // create temporary purchase history
-type BookModel struct {
-	BookID   int
-	Title    string
-	Price    float64
-	StockQty int
-	AuthorID int
-}
-
-type PurchaseBook struct {
-	Date              *time.Time
-	BookID            int
-	PurchaseHistoryID int
-	Qty               int
-	TotalPrice        int
-}
 
 type CreatePurchaseBookParams struct {
 	// Date               *time.Time ==> auto generate from golang time.Date
@@ -59,45 +45,20 @@ type CreatePurchaseBookParams struct {
 	TotalPrice        int
 }
 
-type PurchaseHistory struct {
-	PurchaseID        int
-	Date              *time.Time
-	CustomerID        int
-	TotalPricePayment float64
-	Status            string
-	TransactionNumber string
-}
-
-type CreatePurchaseHistoryParams struct {
-	// Date              *time.Time ==> auto generate from golang time.Date
-	CustomerID        int
-	TotalPricePayment float64
-	Status            string // pending or completed
-	TransactionNumber string // PRCBOOK_20250421_RANDOMCHAR
-}
-
-func (cphp *CreatePurchaseHistoryParams) GenerateRandomTrxNumber() string {
+func GenerateRandomTrxNumber(CustomerID int) string {
 	year, month, date := time.Now().Date()
 
 	month_int := int(month)
 	hour := time.Now().Hour()
 	minute := time.Now().Minute()
 	scd := time.Now().Second() * int(util.RandomInt(0, 5000))
-	custid := cphp.CustomerID
+	custid := CustomerID
 	generateTrxNumber := fmt.Sprintf("PRCBOOK%d%d%d%d%d%d%d", year, month_int, date, hour, minute, scd, custid)
 
 	return generateTrxNumber
 }
 
 type CreatePurchaseHistoryResult struct {
-}
-
-type PurchaseItem struct {
-	PurchaseItemID    int
-	BookID            int
-	PurchaseHistoryID int
-	Qty               int
-	TotalPrice        float64
 }
 
 type BookToPurchase struct {
@@ -114,63 +75,147 @@ type CreateBookToPurchaseParams struct {
 	PurchaseHistoryID int
 	Qty               int
 	TotalPrice        float64
+	PurchaseNumber    string
 }
 
-type CreatePurchaseBookTxParams struct{}
-type CreatePurchaseBookTxResult struct{}
+type EditBookToPurchaseParams struct {
+	Qty               int
+	TotalPrice        float64
+	BookID            int
+	PurchaseHistoryID int
+	PurchaseNumber    string
+}
 
 // CreatePurchase() PurchaseHistory => purchase history
 // AddListBook()
 // DeletePurchase() ["delete list to buy", "delete purchase history"]
 // FinalizePurchase() => update purchase history "completed", set "total_price_payment"
 
-const createPurchaseHistory = `
+// AddStock(bookID, )
+// DecreaseStock()
+
+const createPurchaseHistoryOra = `
 INSERT INTO PURCHASE_HISTORIES (
 	DATE_OF_SALE, 
 	CUSTOMER_ID, 
 	TOTAL_PRICE_PAYMENT, 
 	"STATUS", 
-	TRANSACTION_NUMBER
+	PURCHASE_NUMBER
 ) VALUES (CURRENT_TIMESTAMP, :1, :2, :3, :4)
-	RETURNING ID, TRANSACTION_NUMBER INTO :5, :6
+	RETURNING ID, PURCHASE_NUMBER INTO
 `
+const createPurchaseHistoryPG = `
+INSERT INTO PURCHASE_HISTORIES (
+	DATE_OF_SALE, 
+	CUSTOMER_ID, 
+	TOTAL_PRICE_PAYMENT, 
+	STATUS, 
+	PURCHASE_NUMBER
+) VALUES (CURRENT_TIMESTAMP, $1, $2, $3, $4)
+	RETURNING ID, DATE_OF_SALE, CUSTOMER_ID, TOTAL_PRICE_PAYMENT,STATUS, PURCHASE_NUMBER
+`
+
+type CreatePurchaseHistoryParams struct {
+	// Date              *time.Time ==> auto generate from golang time.Date
+	CustomerID        int
+	TotalPricePayment float64
+	Status            string // pending or completed
+	PurchaseNumber    string // PRCBOOK_20250421_RANDOMCHAR
+}
 
 func (q *Queries) CreatePurchaseHistory(ctx context.Context, arg CreatePurchaseHistoryParams) (PurchaseHistory, error) {
 
-	var i PurchaseHistory
+	if q.dbtype == "ORACLE" {
+		var i PurchaseHistory
 
-	_, err := q.db.ExecContext(ctx, createPurchaseHistory,
-		arg.CustomerID,
-		arg.TotalPricePayment,
-		arg.Status,
-		arg.TransactionNumber,
-		sql.Out{Dest: &i.PurchaseID},
-		sql.Out{Dest: &i.TransactionNumber},
-	)
+		_, err := q.db.ExecContext(ctx, createPurchaseHistoryOra,
+			arg.CustomerID,
+			arg.TotalPricePayment,
+			arg.Status,
+			arg.PurchaseNumber,
+			sql.Out{Dest: &i.PurchaseID},
+			sql.Out{Dest: &i.PurchaseNumber},
+		)
 
-	return i, err
+		return i, err
+	} else if q.dbtype == "POSTGRES" {
+		var i PurchaseHistory
+		// ID, DATE_OF_SALE, CUSTOMER_ID, TOTAL_PRICE_PAYMENT,"STATUS", PURCHASE_NUMBER
+		err := q.db.QueryRowContext(ctx, createPurchaseHistoryPG,
+			arg.CustomerID,
+			arg.TotalPricePayment,
+			arg.Status,
+			arg.PurchaseNumber,
+		).Scan(
+			&i.PurchaseID,
+			&i.Date,
+			&i.CustomerID,
+			&i.TotalPricePayment,
+			&i.Status,
+			&i.PurchaseNumber,
+		)
+		return i, err
+	} else {
+		return PurchaseHistory{}, fmt.Errorf("tipe database berikut tidak diketahui ==> %s", q.dbtype)
+	}
+
 }
 
-const fetchBook = `
+const fetchBookPG = `
 	SELECT 
 		b.ID, 
 		b.STOCK_QTY, 
 		b.TITLE,
 		b.PRICE 
-	FROM BOOKS b WHERE b.ID = :1
+	FROM BOOKS b WHERE b.ID = $1
 `
-const createNewPurchaseItemsBook = `
- INSERT INTO PURCHASE_ITEMS 
-	(BOOK_ID, PURCHASE_HISTORY_ID, QTY, TOTAL_PRICE) 
- VALUES(:1, :2, :3, :4)
+const checkExistedBookListPG string = `
+	SELECT pi.ID FROM PURCHASE_ITEMS pi
+	WHERE pi.PURCHASE_NUMBER = $1
+	AND pi.PURCHASE_HISTORY_ID = $2
+	AND pi.BOOK_ID = $3
 `
 
+const createNewPurchaseItemsBookOra = `
+ INSERT INTO PURCHASE_ITEMS 
+	(BOOK_ID, PURCHASE_HISTORY_ID, QTY, TOTAL_PRICE, PURCHASE_NUMBER) 
+ VALUES(:1, :2, :3, :4, :5)
+`
+const createNewPurchaseItemsBookPG = `
+ INSERT INTO PURCHASE_ITEMS 
+	(BOOK_ID, PURCHASE_HISTORY_ID, QTY, TOTAL_PRICE, PURCHASE_NUMBER) 
+ VALUES($1, $2, $3, $4, $5)
+`
+
+// add book one by one
 func (q *Queries) AddListBook(ctx context.Context, arg CreateBookToPurchaseParams) (BookToPurchase, error) {
 
 	// note ==> harusnya dalam transaksi
 	var i BookToPurchase
-	var bookModel BookModel
-	err := q.db.QueryRowContext(ctx, fetchBook, arg.BookID).Scan(
+	var bookModel Book
+	var existedOnBookList bool = false
+	var purchaseHistID int
+
+	// check jika list buku dengan history id dan purchase number yg sama sudah ada error
+	err := q.db.QueryRowContext(ctx, checkExistedBookListPG, arg.PurchaseNumber, arg.PurchaseHistoryID, arg.BookID).Scan(
+		&purchaseHistID,
+	)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			existedOnBookList = false
+		} else {
+			return i, err
+		}
+	} else {
+		existedOnBookList = true
+	}
+
+	if existedOnBookList {
+		ErrStokBukuHabis = fmt.Errorf("list buku %d pada purchase number %s sudah ada, lakukan edit list untuk ubah jumlah buku", arg.BookID, arg.PurchaseNumber)
+		return i, ErrStokBukuHabis
+	}
+
+	err = q.db.QueryRowContext(ctx, fetchBookPG, arg.BookID).Scan(
 		&bookModel.BookID,
 		&bookModel.StockQty,
 		&bookModel.Title,
@@ -183,7 +228,8 @@ func (q *Queries) AddListBook(ctx context.Context, arg CreateBookToPurchaseParam
 
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return i, fmt.Errorf("ID buku tersebut tidak terdaftar atau tidak ada ==> %d", arg.BookID)
+			ErrIDBukuTidakTerdaftar = fmt.Errorf("ID buku tersebut tidak terdaftar ==> %d", arg.BookID)
+			return i, ErrIDBukuTidakTerdaftar
 		}
 
 		return i, err
@@ -192,31 +238,28 @@ func (q *Queries) AddListBook(ctx context.Context, arg CreateBookToPurchaseParam
 	i.CurrentStockQty = bookModel.StockQty
 
 	if bookModel.StockQty < 1 {
-		return i, fmt.Errorf("gagal, stok buku %s habis", bookModel.Title)
+		ErrStokBukuHabis = errors.New("stock buku habis")
+		return i, ErrStokBukuHabis
 	}
 
 	// check kuota < permintaan
 	if bookModel.StockQty < arg.Qty {
-		return i, fmt.Errorf("gagal, jumlah pembelian buku melebihi stok persediaan")
+		ErrStokBukuKurang = fmt.Errorf("gagal, jumlah pembelian buku melebihi stok persediaan")
+		return i, ErrStokBukuKurang
 	}
 
 	totalPricePerBook := bookModel.Price * float64(arg.Qty)
 
-	_, err = q.db.ExecContext(ctx, createNewPurchaseItemsBook,
+	_, err = q.db.ExecContext(ctx, createNewPurchaseItemsBookPG,
 		arg.BookID,
 		arg.PurchaseHistoryID,
 		arg.Qty,
 		totalPricePerBook,
+		arg.PurchaseNumber,
 	)
 	if err != nil {
-		// if strings.Contains(err.Error(), "ORA-02091") {
-		// 	log.Printf("1: %v", err)
-		// 	// return i, fmt.Errorf("ORA-02091: foreign key violation: purchase_history_id %d not found", arg.PurchaseHistoryID)
-		// 	return i, err
-		// }
 		if strings.Contains(err.Error(), "ORA-02291") {
 			log.Printf("2: %v", err)
-			// return i, fmt.Errorf("ORA-02091: foreign key violation: purchase_history_id %d not found", arg.PurchaseHistoryID)
 			return i, err
 		}
 		return i, err
@@ -225,6 +268,61 @@ func (q *Queries) AddListBook(ctx context.Context, arg CreateBookToPurchaseParam
 	return i, nil
 }
 
+const editListBookPG string = `
+	update purchase_items 
+		set qty = $4,
+		total_price = $5
+	where book_id = $1
+		and purchase_history_id = $2
+		and purchase_number = $3
+`
+const lockeditListBookPG string = `
+	SELECT 1
+	FROM purchase_items
+	WHERE book_id = $1
+		AND purchase_history_id = $2
+		AND purchase_number = $3
+	FOR UPDATE
+`
+
+// jika ingin mengubah jumlah list book
+func (store *SQLStore) EditListBookTx(ctx context.Context, arg EditBookToPurchaseParams) (int64, error) {
+	var err error
+	var result sql.Result
+	var rowsAffected int64
+	// note misalnya tidak dalam transaksi, apakah akan terjadi update sebagian??? iyaa
+	// note jika akan melakukan UPDATE, INSERT disertai logic harus dalam *SQLStore execTx() function!!!
+
+	err = store.execTx(ctx, func(q *Queries) error {
+		_, err = q.db.ExecContext(ctx, lockeditListBookPG, arg.BookID, arg.PurchaseHistoryID, arg.PurchaseNumber)
+		if err != nil {
+			return err
+		}
+		result, err = q.db.ExecContext(ctx, editListBookPG, arg.BookID, arg.PurchaseHistoryID, arg.PurchaseNumber, arg.Qty, arg.TotalPrice)
+		if err != nil {
+			return err
+		}
+
+		rowsAffected, err = result.RowsAffected()
+		if err != nil {
+			return err
+		}
+
+		if rowsAffected < 1 {
+			ErrUpdateNolData = errors.New("error, tidak ada data terupdate")
+			return ErrUpdateNolData
+		}
+		if rowsAffected > 1 {
+			ErrUpdateMultipleData = fmt.Errorf("error, terupdate ==> %d data", rowsAffected)
+			return ErrUpdateMultipleData
+		}
+
+		return nil
+	})
+
+	return rowsAffected, nil
+
+}
 func (q *Queries) DeletePurchase(ctx context.Context, arg ...interface{}) error {
 	return nil
 }
@@ -233,6 +331,66 @@ func (q *Queries) FinalizePurchase() error {
 	return nil
 }
 
-func (store *SQLStore) PurchaseBookTx(ctx context.Context, arg CreatePurchaseBookTxParams) (CreatePurchaseBookTxResult, error) {
-	return CreatePurchaseBookTxResult{}, nil
+const adjustStockBook string = `
+ UPDATE books
+ 	SET stock_qty = $1
+	WHERE id = $2
+`
+
+const lockRowBook string = `
+	SELECT 1
+	FROM books
+	WHERE id = $1
+	FOR UPDATE
+`
+
+// adjust by increase or decrease, ketika dibeli decrease (-) ketika ditambah increase (+)
+func (q *Queries) AdjustStockBook(ctx context.Context, bookID int, corrector int) error {
+	var currentQty int
+	var err error
+	var rowAffected int64
+	// lock row book id
+	_, err = q.db.ExecContext(ctx, lockRowBook, bookID)
+	if err != nil {
+		return err
+	}
+
+	err = q.db.QueryRowContext(ctx, `select stock_qty from books where id = $1`, bookID).Scan(
+		&currentQty,
+	)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			ErrIDBukuTidakTerdaftar = fmt.Errorf("ID buku berikut tidak terdafatar ==> %d", bookID)
+			return ErrIDBukuTidakTerdaftar
+		}
+
+		return err
+	}
+
+	if currentQty < 1 {
+		ErrStokBukuHabis = fmt.Errorf("stock saat ini tidak cukup ==> %d tidak dapat dikurang lagi", currentQty)
+		return ErrStokBukuHabis
+	}
+	var resultAdjust = currentQty + corrector
+
+	if resultAdjust < 0 {
+		ErrNegativeNumber = fmt.Errorf("nilai corrector menyebabkan nilai stock negatif ==> %d silahkan sesuaikan", resultAdjust)
+		return ErrNegativeNumber
+	}
+
+	rowResult, err := q.db.ExecContext(ctx, adjustStockBook, resultAdjust, bookID)
+	if err != nil {
+		return err
+	}
+
+	rowAffected, err = rowResult.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowAffected < 1 {
+		ErrUpdateNolData = fmt.Errorf("error, data terupdate %d/!/", rowAffected)
+		return ErrUpdateNolData
+	}
+
+	return nil
 }
