@@ -93,8 +93,6 @@ func TestMain(m *testing.M) {
 		return
 	}
 
-	log.Printf("load testing.M: %s", "success connect!")
-
 	testStoreOra = NewOra(db_ora).GetConn()
 	testStorePG = NewPG(db_pg).GetConn()
 
