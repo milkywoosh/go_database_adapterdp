@@ -44,7 +44,6 @@ type UserDo interface {
 type PurchaseDo interface {
 	CreatePurchaseHistory(ctx context.Context, arg CreatePurchaseHistoryParams) (PurchaseHistory, error)
 	AddListBook(ctx context.Context, arg CreateBookToPurchaseParams) (BookToPurchase, error)
-	DeletePurchase(ctx context.Context, arg ...interface{}) error
 	FinalizePurchase() error
 	AdjustStockBook(ctx context.Context, bookID int, corrector int) error
 }
