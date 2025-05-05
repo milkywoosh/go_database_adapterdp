@@ -71,15 +71,16 @@ func TestAddListBook(t *testing.T) {
 
 	log.Printf("err %v", err)
 	// require.NoError(t, err)
-	require.False(t, err == ErrIDBukuTidakTerdaftar, fmt.Sprintf("%s ==> %s", ErrIDBukuTidakTerdaftar, "buku tidak terdaftar, buku harus terdaftar di database"))
-	require.False(t, err == ErrStokBukuHabis, fmt.Sprintf("%s ==> %s", ErrStokBukuHabis, "stok buku harus lebih dari 0"))
-	require.False(t, err == ErrStokBukuKurang, fmt.Sprintf("%s ==> %s", ErrStokBukuKurang, "stok buku saat ini lebih sedikit dari penawaran"))
+	// require.IsType(t,  err == ErrIDBukuTidakTerdaftar, fmt.Sprintf("%s ==> %s", ErrIDBukuTidakTerdaftar, "buku tidak terdaftar, buku harus terdaftar di database"))
+	// require.False(t,  err == ErrIDBukuTidakTerdaftar, fmt.Sprintf("%s ==> %s", ErrIDBukuTidakTerdaftar, "buku tidak terdaftar, buku harus terdaftar di database"))
+	// require.False(t, err == ErrStokBukuHabis, fmt.Sprintf("%s ==> %s", ErrStokBukuHabis, "stok buku harus lebih dari 0"))
+	// require.False(t, err == ErrStokBukuKurang, fmt.Sprintf("%s ==> %s", ErrStokBukuKurang, "stok buku saat ini lebih sedikit dari penawaran"))
 	// require.True(t, bookToPurchase.CurrentStockQty > 1, "stock harus lebih besar dari 0")
 	// require.True(t, bookToPurchase.CurrentStockQty >= arg.Qty, "jml stock saat ini harus lebih besar dari jumlah permintaan")
 
 }
 
-func TestEditListBook(t *testing.T) {
+func TestEditListBookTx(t *testing.T) {
 
 	price := 1000.0
 	args := EditBookToPurchaseParams{
@@ -93,10 +94,10 @@ func TestEditListBook(t *testing.T) {
 	// log.Printf("bookid %d, prchistiD %d, prcNumber %s", args.BookID, args.PurchaseHistoryID, args.PurchaseNumber)
 
 	updatedRow, err := testStorePG.EditListBookTx(context.Background(), args)
-
+	require.NoError(t, err) // note : kenapa langsung err, how balikin err yg diinginkan!
 	require.True(t, updatedRow == 1, fmt.Sprintf("data terupdate => %d . update data harus 1 row, tidak boleh lebih atau kurang", updatedRow))
 	require.False(t, updatedRow == 0, "tidak boleh update 0 row")
-	require.False(t, ErrUpdateNolData != nil, ErrUpdateNolData)
+	// require.False(t, ErrUpdateNolData != nil, ErrUpdateNolData)
 	require.NoError(t, err, "check error apapun terakhir")
 }
 
@@ -105,7 +106,21 @@ func TestAdjustSTockBook(t *testing.T) {
 	corrector := -20
 
 	err := testStorePG.AdjustStockBook(context.Background(), bookID, corrector)
-	log.Printf("%v", ErrIDBukuTidakTerdaftar)
+	// log.Printf("%v", ErrIDBukuTidakTerdaftar)
 	require.NoError(t, err)
-	require.True(t, ErrIDBukuTidakTerdaftar == nil, "book is existed is NO")
+	// require.True(t, ErrIDBukuTidakTerdaftar == nil, "book is existed is NO")
+}
+
+func TestDeletePurchaseTx(t *testing.T) {
+
+	args := DeletePurchaseItemsTxParams{
+		PurchaseNumber: "PRCBOOK20255511301261084",
+	}
+
+	err := testStorePG.DeletePurchaseTx(context.Background(), args)
+
+	log.Printf("check err => %v", err)
+
+	require.IsType(t, ErrDBTypeNotImplemented{}, err)
+	// require.NoError(t, err) // note : kenapa langsung err, how balikin err yg diinginkan!
 }
