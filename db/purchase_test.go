@@ -53,14 +53,14 @@ func TestCreatePurchaseHistory(t *testing.T) {
 
 func TestAddListBook(t *testing.T) {
 	// purchaseHistoryID := CreatePurchaseHistory(t).PurchaseID
-	purchaseHistoryID := 4
+	purchaseHistoryID := 6
 
 	arg := CreateBookToPurchaseParams{
-		BookID:            3000,
+		BookID:            3,
 		PurchaseHistoryID: purchaseHistoryID,
-		Qty:               101,
-		TotalPrice:        0.0,
-		PurchaseNumber:    "PRCBOOK2025531955112124",
+		Qty:               2,
+		TotalPrice:        2000.0,
+		PurchaseNumber:    "PRCBOOK2025551721272004",
 	}
 
 	// var bookToPurchase BookToPurchase
@@ -70,7 +70,7 @@ func TestAddListBook(t *testing.T) {
 	// log.Printf("arg qty ==> %v", bookToPurchase.Qty)
 
 	log.Printf("err %v", err)
-	// require.NoError(t, err)
+	require.NoError(t, err)
 	// require.IsType(t,  err == ErrIDBukuTidakTerdaftar, fmt.Sprintf("%s ==> %s", ErrIDBukuTidakTerdaftar, "buku tidak terdaftar, buku harus terdaftar di database"))
 	// require.False(t,  err == ErrIDBukuTidakTerdaftar, fmt.Sprintf("%s ==> %s", ErrIDBukuTidakTerdaftar, "buku tidak terdaftar, buku harus terdaftar di database"))
 	// require.False(t, err == ErrStokBukuHabis, fmt.Sprintf("%s ==> %s", ErrStokBukuHabis, "stok buku harus lebih dari 0"))
@@ -101,7 +101,7 @@ func TestEditListBookTx(t *testing.T) {
 	require.NoError(t, err, "check error apapun terakhir")
 }
 
-func TestAdjustSTockBook(t *testing.T) {
+func TestAdjustStockBook(t *testing.T) {
 	bookID := 6
 	corrector := -20
 
@@ -114,13 +114,15 @@ func TestAdjustSTockBook(t *testing.T) {
 func TestDeletePurchaseTx(t *testing.T) {
 
 	args := DeletePurchaseItemsTxParams{
-		PurchaseNumber: "PRCBOOK20255511301261084",
+		PurchaseNumber: "PRCBOOK2025551721272004",
 	}
 
 	err := testStorePG.DeletePurchaseTx(context.Background(), args)
 
-	log.Printf("check err => %v", err)
+	// log.Printf("check err => %v", err)
 
-	require.IsType(t, ErrDBTypeNotImplemented{}, err)
-	// require.NoError(t, err) // note : kenapa langsung err, how balikin err yg diinginkan!
+	require.NoError(t, err)
+
+	// negative test
+	// require.IsType(t, ErrStatusNotAcceptable{}, err, err.Error())
 }

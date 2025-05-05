@@ -13,6 +13,7 @@ type Store interface {
 	CreateUserTx(ctx context.Context, arg CreateUserTxParams) (CreateUserTxResult, error)
 	PurchaseBookTx(ctx context.Context, arg CreatePurchaseBookTxParams) (CreatePurchaseBookTxResult, error)
 	EditListBookTx(ctx context.Context, arg EditBookToPurchaseParams) (int64, error)
+	DeletePurchaseTx(ctx context.Context, arg DeletePurchaseItemsTxParams) error
 }
 
 type SQLStore struct {
