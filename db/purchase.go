@@ -447,6 +447,19 @@ func (q *Queries) AdjustStockBook(ctx context.Context, bookID int, corrector int
 	var currentQty int
 	var err error
 	var rowAffected int64
+
+	if corrector < 1 {
+		// this struct is error and implement error interface
+		return ErrNegativeNumber{
+			Msg: fmt.Sprintf("nilai corrector negatif ==> %d silahkan sesuaikan", corrector),
+		}
+	}
+
+	if bookID < 1 {
+		var err ErrIDBukuTidakTerdaftar
+		err.Msg = fmt.Sprintf("ID buku berikut tidak terdaftar ==> %d", bookID)
+		return err
+	}
 	// lock row book id
 	_, err = q.db.ExecContext(ctx, lockRowBook, bookID)
 	if err != nil {

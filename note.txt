@@ -32,3 +32,6 @@ tbl := "C##BOOK_STORE"
 
 note clear test cache
 ==> go clean -testcache
+
+
+note implement adapter pattern for using 2 different database
