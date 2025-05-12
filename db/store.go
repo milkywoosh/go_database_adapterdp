@@ -21,7 +21,7 @@ type SQLStore struct {
 	*Queries
 }
 
-func NewStore(connPool *sql.DB, dbtype_arg string) *SQLStore {
+func NewStore(connPool *sql.DB, dbtype_arg string) Store {
 	return &SQLStore{
 		connPool: connPool,
 		Queries:  New(connPool, dbtype_arg),
