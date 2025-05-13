@@ -298,7 +298,7 @@ func (store *SQLStore) EditListBookTx(ctx context.Context, arg EditBookToPurchas
 	var result sql.Result
 	var rowsAffected int64
 	// note misalnya tidak dalam transaksi, apakah akan terjadi update sebagian??? setelah tested result: iya
-	// note jika akan melakukan UPDATE, INSERT disertai logic harus dalam *SQLStore execTx() function!!!
+	// note jika akan melakukan beberapa operasi UPDATE, INSERT disertai logic harus dalam *SQLStore execTx() function!!!
 
 	err = store.execTx(ctx, func(q *Queries) error {
 		_, err = q.db.ExecContext(ctx, lockRowEditListBookPG, arg.BookID, arg.PurchaseHistoryID, arg.PurchaseNumber)
