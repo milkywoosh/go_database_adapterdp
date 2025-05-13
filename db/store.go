@@ -18,7 +18,7 @@ type Store interface {
 
 type SQLStore struct {
 	connPool *sql.DB // *godror.Conn() atau pgx.Conn() depend definisi dbtype
-	*Queries
+	*Queries         // note: by directly embedding Queries, we can access all the field of *Queries directly. Such *SQLStore.dbtype because dbtype is inside *Queries struct
 }
 
 func NewStore(connPool *sql.DB, dbtype_arg string) Store {
