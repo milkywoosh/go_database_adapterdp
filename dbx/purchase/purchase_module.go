@@ -1,4 +1,4 @@
-package db
+package purchase
 
 import (
 	"context"
@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/luke_design_pattern/dbx"
 	"github.com/luke_design_pattern/util"
 )
 
@@ -122,7 +123,7 @@ type CreatePurchaseHistoryParams struct {
 	PurchaseNumber    string // PRCBOOK_20250421_RANDOMCHAR
 }
 
-func (q *Queries) CreatePurchaseHistory(ctx context.Context, arg CreatePurchaseHistoryParams) (PurchaseHistory, error) {
+func (q *PurchaseQueries) CreatePurchaseHistory(ctx context.Context, arg CreatePurchaseHistoryParams) (PurchaseHistory, error) {
 
 	if q.dbtype == "ORACLE" {
 		var i PurchaseHistory
@@ -187,7 +188,7 @@ const createNewPurchaseItemsBookPG = `
 `
 
 // add book one by one
-func (q *Queries) AddListBook(ctx context.Context, arg CreateBookToPurchaseParams) (BookToPurchase, error) {
+func (q *PurchaseQueries) AddListBook(ctx context.Context, arg CreateBookToPurchaseParams) (BookToPurchase, error) {
 
 	// note ==> harusnya dalam transaksi
 	var i BookToPurchase
@@ -210,7 +211,7 @@ func (q *Queries) AddListBook(ctx context.Context, arg CreateBookToPurchaseParam
 	}
 
 	if existedOnBookList {
-		var err ErrStokBukuHabis
+		var err dbx.ErrStokBukuHabis
 		err.Msg = fmt.Sprintf("list buku %d pada purchase number %s sudah ada, lakukan edit list untuk ubah jumlah buku", arg.BookID, arg.PurchaseNumber)
 
 		return i, err
@@ -230,7 +231,7 @@ func (q *Queries) AddListBook(ctx context.Context, arg CreateBookToPurchaseParam
 	if err != nil {
 		if err == sql.ErrNoRows {
 
-			var err ErrIDBukuTidakTerdaftar
+			var err dbx.ErrIDBukuTidakTerdaftar
 			err.Msg = fmt.Sprintf("ID buku tersebut tidak terdaftar ==> %d", arg.BookID)
 			return i, err
 		}
@@ -242,7 +243,7 @@ func (q *Queries) AddListBook(ctx context.Context, arg CreateBookToPurchaseParam
 
 	if bookModel.StockQty < 1 {
 
-		var err ErrStokBukuHabis
+		var err dbx.ErrStokBukuHabis
 		err.Msg = fmt.Sprintln("stock buku habis")
 		return i, err
 	}
@@ -250,7 +251,7 @@ func (q *Queries) AddListBook(ctx context.Context, arg CreateBookToPurchaseParam
 	// check kuota < permintaan
 	if bookModel.StockQty < arg.Qty {
 
-		var err ErrStokBukuKurang
+		var err dbx.ErrStokBukuKurang
 		err.Msg = fmt.Sprintln("gagal, jumlah pembelian buku melebihi stok persediaan")
 		return i, err
 	}
@@ -293,14 +294,14 @@ const lockRowEditListBookPG string = `
 `
 
 // jika ingin mengubah jumlah list book
-func (store *SQLStore) EditListBookTx(ctx context.Context, arg EditBookToPurchaseParams) (int64, error) {
+func (store *PurchaseStore) EditListBookTx(ctx context.Context, arg EditBookToPurchaseParams) (int64, error) {
 	var err error
 	var result sql.Result
 	var rowsAffected int64
 	// note misalnya tidak dalam transaksi, apakah akan terjadi update sebagian??? setelah tested result: iya
 	// note jika akan melakukan UPDATE, INSERT disertai logic harus dalam *SQLStore execTx() function!!!
 
-	err = store.execTx(ctx, func(q *Queries) error {
+	err = store.execTx(ctx, func(q *PurchaseQueries) error {
 		_, err = q.db.ExecContext(ctx, lockRowEditListBookPG, arg.BookID, arg.PurchaseHistoryID, arg.PurchaseNumber)
 		if err != nil {
 			return err
@@ -316,13 +317,13 @@ func (store *SQLStore) EditListBookTx(ctx context.Context, arg EditBookToPurchas
 		}
 
 		if rowsAffected < 1 {
-			var err ErrUpdateNolData
+			var err dbx.ErrUpdateNolData
 			err.Msg = fmt.Sprintln("error, tidak ada data terupdate")
 			return err
 		}
 		if rowsAffected > 1 {
 
-			var err ErrUpdateMultipleData
+			var err dbx.ErrUpdateMultipleData
 			err.Msg = fmt.Sprintf("error, terupdate ==> %d data", rowsAffected)
 			return err
 		}
@@ -360,7 +361,7 @@ const deletePurchaseHistoryPG string = `
 	WHERE purchase_number = $1
 `
 
-func (store *SQLStore) DeletePurchaseTx(ctx context.Context, args DeletePurchaseItemsTxParams) error {
+func (store *PurchaseStore) DeletePurchaseTx(ctx context.Context, args DeletePurchaseItemsTxParams) error {
 	// param : purchase_number
 
 	// if status != "pending" {
@@ -375,7 +376,7 @@ func (store *SQLStore) DeletePurchaseTx(ctx context.Context, args DeletePurchase
 	var PurchaseHistories PurchaseHistory
 
 	if store.dbtype == "POSTGRES" {
-		err = store.execTx(ctx, func(q *Queries) error {
+		err = store.execTx(ctx, func(q *PurchaseQueries) error {
 
 			_, err = q.db.ExecContext(ctx, lockRowPurchaseItemsByPurchaseNumberPG, args.PurchaseNumber)
 
@@ -392,7 +393,7 @@ func (store *SQLStore) DeletePurchaseTx(ctx context.Context, args DeletePurchase
 			}
 
 			if PurchaseHistories.Status != "pending" {
-				var err ErrStatusNotAcceptable
+				var err dbx.ErrStatusNotAcceptable
 				err.Msg = fmt.Sprintf("status saat ini ==> '%s' sehingga tidak dapat proses penghapusan", PurchaseHistories.Status)
 				return err
 			}
@@ -413,11 +414,11 @@ func (store *SQLStore) DeletePurchaseTx(ctx context.Context, args DeletePurchase
 		return err
 
 	} else if store.dbtype == "ORACLE" {
-		var err ErrDBTypeNotImplemented
+		var err dbx.ErrDBTypeNotImplemented
 		err.Msg = fmt.Sprintf("DB Type is not currently implemented ==> %s", store.dbtype)
 		return err
 	} else {
-		var err ErrDBTypeNotImplemented
+		var err dbx.ErrDBTypeNotImplemented
 		err.Msg = fmt.Sprintf("DB Type is not currently implemented ==> %s", store.dbtype)
 		return err
 	}
@@ -426,7 +427,7 @@ func (store *SQLStore) DeletePurchaseTx(ctx context.Context, args DeletePurchase
 
 }
 
-func (q *Queries) FinalizePurchase() error {
+func (q *PurchaseQueries) FinalizePurchase() error {
 	return fmt.Errorf("not implemented yet %s", "not ready")
 }
 
@@ -443,20 +444,20 @@ const adjustStockBook string = `
 `
 
 // adjust by increase or decrease, ketika dibeli decrease (-) ketika ditambah increase (+)
-func (q *Queries) AdjustStockBook(ctx context.Context, bookID int, corrector int) error {
+func (q *PurchaseQueries) AdjustStockBook(ctx context.Context, bookID int, corrector int) error {
 	var currentQty int
 	var err error
 	var rowAffected int64
 
 	if corrector < 1 {
 		// this struct is error and implement error interface
-		return ErrNegativeNumber{
+		return dbx.ErrNegativeNumber{
 			Msg: fmt.Sprintf("nilai corrector negatif ==> %d silahkan sesuaikan", corrector),
 		}
 	}
 
 	if bookID < 1 {
-		var err ErrIDBukuTidakTerdaftar
+		var err dbx.ErrIDBukuTidakTerdaftar
 		err.Msg = fmt.Sprintf("ID buku berikut tidak terdaftar ==> %d", bookID)
 		return err
 	}
@@ -471,7 +472,7 @@ func (q *Queries) AdjustStockBook(ctx context.Context, bookID int, corrector int
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			var err ErrIDBukuTidakTerdaftar
+			var err dbx.ErrIDBukuTidakTerdaftar
 			err.Msg = fmt.Sprintf("ID buku berikut tidak terdaftar ==> %d", bookID)
 			return err
 		}
@@ -480,14 +481,14 @@ func (q *Queries) AdjustStockBook(ctx context.Context, bookID int, corrector int
 	}
 
 	if currentQty < 1 {
-		var err ErrStokBukuHabis
+		var err dbx.ErrStokBukuHabis
 		err.Msg = fmt.Sprintf("stock saat ini tidak cukup ==> %d tidak dapat dikurang lagi", currentQty)
 		return err
 	}
 	var resultAdjust = currentQty + corrector
 
 	if resultAdjust < 0 {
-		var err ErrNegativeNumber
+		var err dbx.ErrNegativeNumber
 		err.Msg = fmt.Sprintf("nilai corrector menyebabkan nilai stock negatif ==> %d silahkan sesuaikan", resultAdjust)
 		return err
 	}
@@ -502,7 +503,7 @@ func (q *Queries) AdjustStockBook(ctx context.Context, bookID int, corrector int
 		return err
 	}
 	if rowAffected < 1 {
-		var err ErrUpdateNolData
+		var err dbx.ErrUpdateNolData
 		err.Msg = fmt.Sprintf("error, data terupdate %d/!/", rowAffected)
 		return err
 	}

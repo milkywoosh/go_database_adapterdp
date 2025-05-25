@@ -1,17 +1,17 @@
-package db
+package user
 
 import (
 	"context"
 
-	"github.com/luke_design_pattern/db"
+	"github.com/luke_design_pattern/dbx"
 )
 
 type UserQueries struct {
 	dbtype string
-	db     db.DBTX
+	db     dbx.DBTX
 }
 
-func NewUserQuery(db_arg db.DBTX, dbtype string) *UserQueries {
+func NewUserQuery(db_arg dbx.DBTX, dbtype string) *UserQueries {
 	return &UserQueries{
 		db:     db_arg,
 		dbtype: dbtype,

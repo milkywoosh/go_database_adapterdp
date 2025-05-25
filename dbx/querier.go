@@ -1,4 +1,4 @@
-package db
+package dbx
 
 type CreateUserParams struct {
 	Username, Email, Firstname, Lastname, Password string

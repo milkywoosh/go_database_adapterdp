@@ -1,7 +1,9 @@
-package db
+package purchase
 
 import "time"
 
+type CreatePurchaseBookTxParams struct{}
+type CreatePurchaseBookTxResult struct{}
 type PurchaseBook struct {
 	Date              *time.Time
 	BookID            int
@@ -25,4 +27,12 @@ type PurchaseItem struct {
 	PurchaseHistoryID,
 	Qty int
 	TotalPrice float64
+}
+
+type Book struct {
+	BookID   int
+	Title    string
+	Price    float64
+	StockQty int
+	AuthorID int
 }

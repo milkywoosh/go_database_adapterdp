@@ -1,4 +1,4 @@
-package db
+package user
 
 type Book struct {
 	BookID   int

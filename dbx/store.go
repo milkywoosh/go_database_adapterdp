@@ -1,8 +1,7 @@
-package db
+package dbx
 
 import (
 	"database/sql"
-	""
 )
 
 // note misalnya tidak dalam transaksi, apakah akan terjadi update sebagian??? iyaa
@@ -10,7 +9,6 @@ import (
 
 // need interface segregation! => untuk memisahkan transaction tiap REPO [UserRepo, PurchaseRepo ...]
 type Store interface {
-	UserTransaction
 }
 
 // trial can be deleted anytime
@@ -24,15 +22,9 @@ func NewUserStore(store Store) *UserStore {
 	}
 }
 
-type PurchaseStore struct {
-	Store
-}
-
-func NewPurchaseStore(store Store) *PurchaseStore {
-	return &PurchaseStore{
-		store,
-	}
-}
+// type PurchaseStore struct {
+// 	Store
+// }
 
 type SQLStore struct {
 	connPool *sql.DB // *godror.Conn() atau pgx.Conn() depend definisi dbtype

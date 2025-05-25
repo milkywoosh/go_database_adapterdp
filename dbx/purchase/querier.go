@@ -1,18 +1,17 @@
-package db
+package purchase
 
 import (
 	"context"
-	"database/sql"
 
-	"github.com/luke_design_pattern/db"
+	"github.com/luke_design_pattern/dbx"
 )
 
 type PurchaseQueries struct {
 	dbtype string
-	db     db.DBTX
+	db     dbx.DBTX
 }
 
-func NewPurchaseQueries(dbtype string, db_arg *sql.DB) *PurchaseQueries {
+func NewPurchaseQueries(db_arg dbx.DBTX, dbtype string) *PurchaseQueries {
 	return &PurchaseQueries{
 		dbtype: dbtype,
 		db:     db_arg,
