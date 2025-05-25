@@ -38,9 +38,9 @@ INSERT INTO USERS (
   "alice",
   sql.Out{Dest: &id},
 )
-  */
+*/
 // for now disini dulu!
-func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (Users, error) {
+func (q *UserQueries) CreateUser(ctx context.Context, arg CreateUserParams) (Users, error) {
 
 	if q.dbtype == "ORACLE" {
 		var i Users

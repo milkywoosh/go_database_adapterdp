@@ -1,8 +1,8 @@
 package db
 
 import (
-	"context"
 	"database/sql"
+	""
 )
 
 // note misalnya tidak dalam transaksi, apakah akan terjadi update sebagian??? iyaa
@@ -10,11 +10,7 @@ import (
 
 // need interface segregation! => untuk memisahkan transaction tiap REPO [UserRepo, PurchaseRepo ...]
 type Store interface {
-	Querier
-	CreateUserTx(ctx context.Context, arg CreateUserTxParams) (CreateUserTxResult, error)
-	PurchaseBookTx(ctx context.Context, arg CreatePurchaseBookTxParams) (CreatePurchaseBookTxResult, error)
-	EditListBookTx(ctx context.Context, arg EditBookToPurchaseParams) (int64, error)
-	DeletePurchaseTx(ctx context.Context, arg DeletePurchaseItemsTxParams) error
+	UserTransaction
 }
 
 // trial can be deleted anytime

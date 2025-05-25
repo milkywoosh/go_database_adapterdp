@@ -3,7 +3,6 @@ package db
 import (
 	"context"
 	"database/sql"
-	"fmt"
 )
 
 type DBTX interface {
@@ -14,20 +13,16 @@ type DBTX interface {
 
 // DBTX interface => *sql.DB => karena implement 3 signatures
 type Queries struct {
-	dbtype string
-	db     DBTX
+	DBtype string
+	DB     DBTX
 }
 
 // constructor
 func New(db_arg DBTX, dbtype_arg string) *Queries {
 	return &Queries{
-		dbtype: dbtype_arg,
-		db:     db_arg,
+		DBtype: dbtype_arg,
+		DB:     db_arg,
 	}
-}
-
-func (q *Queries) WithTx() error {
-	return fmt.Errorf("error unknown")
 }
 
 type OraAdapter struct {
