@@ -9,7 +9,11 @@ type CreateUserTxResult struct {
 }
 
 type CreateUserParams struct {
-	Username, Email, Firstname, Lastname, Password string
+	Username  string
+	Email     string
+	Firstname string
+	Lastname  string
+	Password  string
 }
 
 type Querier interface {

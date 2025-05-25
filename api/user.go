@@ -1,23 +1,37 @@
 package api
 
 import (
+	"context"
 	_ "database/sql"
+	"errors"
 	_ "fmt"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/luke_design_pattern/db"
 )
 
-type createUserRequest struct {
-	Username, Email, Firstname, Lastname, Password string
+type CreateUserRequest struct {
+	Username  string `json:"username" binding:"required"`
+	Email     string `json:"email" binding:"required,email"`
+	Firstname string `json:"firstname" binding:"required"`
+	Lastname  string `json:"lastname" binding:"required"`
+	Password  string `json:"password" binding:"required,min=6"`
 }
 
-func (server *Server) CreateUser(ctx *gin.Context) {
+func (server *Server) CreateUser(c *gin.Context) {
 
-	var req createUserRequest
-	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+	ctx := c.Request.Context()
+	ctx, cancelFunc := context.WithTimeout(ctx, 100*time.Millisecond)
+
+	defer cancelFunc()
+
+	// chTimeOut := make(chan string)
+
+	var req CreateUserRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, errorResponse(err))
 		return
 	}
 
@@ -38,10 +52,16 @@ func (server *Server) CreateUser(ctx *gin.Context) {
 
 	users, err := server.store.CreateUserTx(ctx, args)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		// catch err from db driver
+		// catch err from defined deadline context
+		if errors.Is(err, context.DeadlineExceeded) || errors.Is(ctx.Err(), context.DeadlineExceeded) {
+			c.JSON(http.StatusGatewayTimeout, errorResponse(err))
+			return
+		}
+		c.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
 
-	ctx.JSON(http.StatusOK, users)
-	return
+	c.JSON(http.StatusOK, users)
+
 }
