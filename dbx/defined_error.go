@@ -1,4 +1,4 @@
-package db
+package dbx
 
 // all structs implement Error() string signature. Owned by Error Interface
 // so i can set them ass Error return type

@@ -1,9 +1,7 @@
-package db
+package user
 
 import (
 	"context"
-	"database/sql"
-	"fmt"
 )
 
 // NOTE: khusus query ORACLE => placeholder :1, :2, :3
@@ -89,13 +87,17 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (Users, 
 
 type CreateUserTxParams struct {
 	CreateUserParams
+<<<<<<< HEAD:db/tx_create_user.go
+=======
+
+>>>>>>> trial_abstract:dbx/user/transaction.go
 	AfterCreate func(user Users) error // note: diisi function APAPUN yg penting passing argument tipe Users dan return Error!
 }
 
-func (store *SQLStore) CreateUserTx(ctx context.Context, arg CreateUserTxParams) (CreateUserTxResult, error) {
+func (store *UserStore) CreateUserTx(ctx context.Context, arg CreateUserTxParams) (CreateUserTxResult, error) {
 	var result CreateUserTxResult
 
-	err := store.execTx(ctx, func(q *Queries) error {
+	err := store.execTx(ctx, func(q *UserQueries) error {
 		var err error
 		// means: AfterCreate is a function field (callback) that takes a Users object and returns an error.
 		// It's a callback that's run after the user has been created in the database, inside the transaction.
@@ -110,4 +112,8 @@ func (store *SQLStore) CreateUserTx(ctx context.Context, arg CreateUserTxParams)
 	})
 
 	return result, err
+}
+
+func (store *UserStore) AssignRoleTx(ctx context.Context, arg CreateUserTxParams) (CreateUserTxResult, error) {
+	return CreateUserTxResult{}, nil
 }
