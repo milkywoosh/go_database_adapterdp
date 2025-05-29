@@ -14,7 +14,7 @@ import (
 	"github.com/luke_design_pattern/config"
 )
 
-var testStoreOra *SQLStore
+// var testStoreOra *SQLStore
 var testStorePG *SQLStore
 
 func TestMain(m *testing.M) {
