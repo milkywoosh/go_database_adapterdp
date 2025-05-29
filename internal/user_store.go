@@ -3,6 +3,8 @@ package internal
 import (
 	"context"
 	"database/sql"
+
+	"github.com/luke_design_pattern/util"
 )
 
 type UserStoreTx interface {
@@ -75,6 +77,37 @@ func (store *UserStore) CreateUserTx(ctx context.Context, arg CreateUserTxParams
 	})
 
 	return result, err
+}
+
+func (store *UserStore) Login(ctx context.Context, arg LoginUserTxParams) (LoginUserTxResult, error) {
+
+	var resultTx LoginUserTxResult = LoginUserTxResult{
+		Username:  arg.Username,
+		Password:  "",
+		IsSuccess: false,
+		Msg:       "Error testing",
+	}
+
+	err := store.execTx(ctx, func(uq *UserQueries) error {
+
+		// if there is process to database put here
+
+		ok, err := util.VerifyPasswprdPaseto(arg.RawPassword, arg.EncryptedPW)
+		if err != nil {
+			resultTx.Msg = err.Error()
+			return err
+		}
+
+		if !ok {
+			resultTx.Msg = "err not ok verify password paseto"
+			return err
+		}
+		return nil
+	})
+
+	resultTx.IsSuccess = true
+	resultTx.Msg = "success login"
+	return resultTx, err
 }
 
 func (store *UserStore) AssignRoleTx(ctx context.Context, arg CreateUserTxParams) (CreateUserTxResult, error) {

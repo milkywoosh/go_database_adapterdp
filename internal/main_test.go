@@ -93,7 +93,7 @@ func TestMain(m *testing.M) {
 		return
 	}
 
-	testStoreOra = NewOra(db_ora).GetConn()
+	// testStoreOra = NewOra(db_ora).GetConn()
 
 	testStorePG = NewPG(db_pg).GetConn()
 

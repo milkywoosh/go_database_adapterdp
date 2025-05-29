@@ -68,4 +68,39 @@ func (q *UserQueries) CreateUser(ctx context.Context, arg CreateUserParams) (Use
 
 }
 
+func (q *UserQueries) FetchUserByUsername(ctx context.Context, arg Users) (Users, error) {
+	var i Users
+
+	const queryFetch = `
+		SELECT
+			username,
+			password
+		FROM users u
+		WHERE u.username =?
+	`
+	err := q.db.QueryRowContext(ctx, queryFetch, i.Username).Scan(
+		&i.Username,
+	)
+
+	return i, err
+}
+
+func (q *UserQueries) CheckPasswordByUsername(ctx context.Context, arg UserCredential) (UserCredential, error) {
+	var i UserCredential
+
+	const queryFetch = `
+		SELECT
+			username,
+			password
+		FROM users u
+		WHERE u.username =?
+	`
+	err := q.db.QueryRowContext(ctx, queryFetch, i.Username).Scan(
+		&i.Username,
+		&i.Password,
+	)
+
+	return i, err
+}
+
 var _ UserQuerier = (*UserQueries)(nil)

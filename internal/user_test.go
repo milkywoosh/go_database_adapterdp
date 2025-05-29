@@ -19,6 +19,9 @@ func TestCreateUser(t *testing.T) {
 		Password:  util.RandomString(10),
 	}
 
+	/* off access to ORA
+
+
 	users, err := testStoreOra.CreateUser(context.Background(), arg)
 	log.Printf("arg ==> %v	", arg)
 	log.Printf("users ora ==> %v	", users)
@@ -31,7 +34,10 @@ func TestCreateUser(t *testing.T) {
 	require.Equal(t, arg.Firstname, users.Firstname)
 	require.Equal(t, arg.Lastname, users.Lastname)
 
-	users, err = testStorePG.CreateUser(context.Background(), arg)
+	off access to ORA
+	*/
+
+	users, err := testStorePG.CreateUser(context.Background(), arg)
 	log.Printf("arg ==> %v	", arg)
 	log.Printf("users pg ==> %v	", users)
 
@@ -43,4 +49,18 @@ func TestCreateUser(t *testing.T) {
 	require.Equal(t, arg.Email, users.Email)
 	require.Equal(t, arg.Firstname, users.Firstname)
 	require.Equal(t, arg.Lastname, users.Lastname)
+}
+
+func TestLoginUser(t *testing.T) {
+	args := LoginUserTxParams{
+		Username:    "luke",
+		RawPassword: "password123",
+		EncryptedPW: "password123",
+	}
+
+	// var result LoginUserTxResult
+	var err error
+	_, err = testStorePG.Login(context.Background(), args)
+	require.NoError(t, err, "initiate checking if error existed")
+
 }

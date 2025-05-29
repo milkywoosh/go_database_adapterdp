@@ -12,7 +12,22 @@ type Users struct {
 	Username,
 	Email,
 	Firstname,
-	Lastname string
+	Lastname,
+	PasswordHistoryCount string
+}
+
+type LoginUserTxParams struct {
+	Username, RawPassword, EncryptedPW string
+}
+
+type LoginUserTxResult struct {
+	Username, Password string
+	IsSuccess          bool
+	Msg                string
+}
+
+type UserCredential struct {
+	Username, Password string
 }
 
 type CreateUserTxResult struct {
