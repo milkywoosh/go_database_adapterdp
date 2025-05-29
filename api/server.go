@@ -44,6 +44,13 @@ func (server *Server) Start(address string) error {
 
 func errorResponse(err error) gin.H {
 	return gin.H{
-		"error_message": err.Error(),
+		"message": err.Error(),
+	}
+}
+
+func successResponse(msg string, data any) gin.H {
+	return gin.H{
+		"message": msg,
+		"data":    data,
 	}
 }
