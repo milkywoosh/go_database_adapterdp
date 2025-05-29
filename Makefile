@@ -86,3 +86,20 @@ trx_create_prc:
 		(date_of_sale, customer_id, total_price_payment, status, purchase_number) \
 		VALUES('2024-12-17 23:20:17.925', 4, 100000.000, 'pending', 'PRCBOOK2025731955112345') \
 	"
+
+.PHONY: datatable_prc
+datatable_prc:
+	$(EXEC_DOCKER_PG17V1) \
+	"select  \
+		pi.purchase_number as purchase_number, \
+		pi.total_price, \
+		pi.qty, \
+		b.title, \
+		b.price as price_each, \
+		ph.date_of_sale, \
+		ph.status \
+	from purchase_items pi \
+	left join books b on b.id = pi.book_id  \
+	left join purchase_histories ph on ph.id = pi.purchase_history_id \
+	where pi.purchase_number IS NOT NULL \
+	"
