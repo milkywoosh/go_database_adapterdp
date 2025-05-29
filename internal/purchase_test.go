@@ -53,13 +53,13 @@ func TestCreatePurchaseHistory(t *testing.T) {
 
 func TestAddListBook(t *testing.T) {
 	// purchaseHistoryID := CreatePurchaseHistory(t).PurchaseID
-	purchaseHistoryID := 7
+	purchaseHistoryID := 11
 	// 4,5,7,9
 	arg := CreateBookToPurchaseParams{
-		BookID:            13,
+		BookID:            21,
 		PurchaseHistoryID: purchaseHistoryID,
 		Qty:               2,
-		PurchaseNumber:    "PRCBOOK20255292149696264",
+		PurchaseNumber:    "PRCBOOK20255292251294414",
 	}
 	fmt.Println(arg)
 	// var bookToPurchase BookToPurchase
