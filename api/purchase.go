@@ -49,5 +49,13 @@ func (server *Server) DeletePurchase(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusAccepted, fmt.Sprintf("succes delete purchase number: %s", params.PrcNumber))
+	resp := successResponse(
+		fmt.Sprintf("succes delete purchase number: %s", params.PrcNumber),
+		struct {
+			PurchaseNumber string `json:"purchase_number"`
+		}{
+			PurchaseNumber: params.PrcNumber,
+		},
+	)
+	c.JSON(http.StatusAccepted, resp)
 }
