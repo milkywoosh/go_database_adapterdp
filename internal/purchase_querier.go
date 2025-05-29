@@ -55,14 +55,6 @@ type PurchaseQuerier interface {
 
 // create temporary purchase history
 
-type CreatePurchaseBookParams struct {
-	// Date               *time.Time ==> auto generate from golang time.Date
-	BookID            int
-	PurchaseHistoryID int
-	Qty               int
-	TotalPrice        int
-}
-
 func GenerateRandomTrxNumber(CustomerID int) string {
 	year, month, date := time.Now().Date()
 
@@ -74,26 +66,6 @@ func GenerateRandomTrxNumber(CustomerID int) string {
 	generateTrxNumber := fmt.Sprintf("PRCBOOK%d%d%d%d%d%d%d", year, month_int, date, hour, minute, scd, custid)
 
 	return generateTrxNumber
-}
-
-type CreatePurchaseHistoryResult struct {
-}
-
-type BookToPurchase struct {
-	BookID            int
-	Qty               int
-	PurchaseHistoryID int
-	CurrentStockQty   int
-}
-
-type ListBooksToPurchase []BookToPurchase
-
-type CreateBookToPurchaseParams struct {
-	BookID            int
-	PurchaseHistoryID int
-	Qty               int
-	TotalPrice        float64
-	PurchaseNumber    string
 }
 
 // CreatePurchase() PurchaseHistory => purchase history
@@ -124,14 +96,6 @@ INSERT INTO PURCHASE_HISTORIES (
 ) VALUES (CURRENT_TIMESTAMP, $1, $2, $3, $4)
 	RETURNING ID, DATE_OF_SALE, CUSTOMER_ID, TOTAL_PRICE_PAYMENT,STATUS, PURCHASE_NUMBER
 `
-
-type CreatePurchaseHistoryParams struct {
-	// Date              *time.Time ==> auto generate from golang time.Date
-	CustomerID        int
-	TotalPricePayment float64
-	Status            string // pending or completed
-	PurchaseNumber    string // PRCBOOK_20250421_RANDOMCHAR
-}
 
 func (q *PurchaseQueries) CreatePurchaseHistory(ctx context.Context, arg CreatePurchaseHistoryParams) (PurchaseHistory, error) {
 
@@ -372,16 +336,6 @@ func (q *PurchaseQueries) AdjustStockBook(ctx context.Context, bookID int, corre
 	return nil
 }
 
-type PurchaseDatatable struct {
-	PurchaseNumber string     `json:"purchase_number"`
-	Qty            int        `json:"qty"`
-	BookTitle      string     `json:"book_title"`
-	TotalPrice     float64    `json:"total_price"`
-	EachPrice      float64    `json:"each_price"`
-	DateOfSale     *time.Time `json:"date_of_sale"`
-	Status         string     `json:"status"`
-}
-
 func (q *PurchaseQueries) Datatable(ctx context.Context) ([]PurchaseDatatable, error) {
 
 	queryDatatable := `
@@ -487,4 +441,36 @@ func (q *PurchaseQueries) DeletePrcItemWithHistory(ctx context.Context, purchase
 		return fmt.Errorf("err delete purchase history: %w", err)
 	}
 	return nil
+}
+
+func (q *PurchaseQueries) LockRowEditListBookPG(ctx context.Context, bookID int, prcHistoryID int, purchaseNumber string) error {
+	const lockRowEditListBookPG string = `
+	SELECT 1
+		FROM purchase_items
+		WHERE book_id = $1
+			AND purchase_history_id = $2
+			AND purchase_number = $3
+		FOR UPDATE
+	`
+	_, err := q.db.ExecContext(ctx, lockRowEditListBookPG, bookID, prcHistoryID, purchaseNumber)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (q *PurchaseQueries) EditListBookPG(ctx context.Context, bookID int, prcHistoryID int, purchaseNumber string, qty int, totalPrice float64) (sql.Result, error) {
+	const editListBookPG string = `
+		update purchase_items 
+			set qty = $4,
+			total_price = $5
+		where book_id = $1
+			and purchase_history_id = $2
+			and purchase_number = $3
+	`
+	result, err := q.db.ExecContext(ctx, editListBookPG, bookID, prcHistoryID, purchaseNumber, qty, totalPrice)
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
 }

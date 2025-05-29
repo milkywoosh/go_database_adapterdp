@@ -35,23 +35,6 @@ func (store *PurchaseStore) PurchaseBookTx(ctx context.Context, arg CreatePurcha
 	return CreatePurchaseBookTxResult{}, nil
 }
 
-const editListBookPG string = `
-	update purchase_items 
-		set qty = $4,
-		total_price = $5
-	where book_id = $1
-		and purchase_history_id = $2
-		and purchase_number = $3
-`
-const lockRowEditListBookPG string = `
-	SELECT 1
-	FROM purchase_items
-	WHERE book_id = $1
-		AND purchase_history_id = $2
-		AND purchase_number = $3
-	FOR UPDATE
-`
-
 // jika ingin mengubah jumlah list book
 func (store *PurchaseStore) EditListBookTx(ctx context.Context, arg EditBookToPurchaseParams) (int64, error) {
 	var err error
@@ -62,11 +45,12 @@ func (store *PurchaseStore) EditListBookTx(ctx context.Context, arg EditBookToPu
 
 	err = store.execTx(ctx, func(q *PurchaseQueries) error {
 
-		_, err = q.db.ExecContext(ctx, lockRowEditListBookPG, arg.BookID, arg.PurchaseHistoryID, arg.PurchaseNumber)
+		err := q.LockRowEditListBookPG(ctx, arg.BookID, arg.PurchaseHistoryID, arg.PurchaseNumber)
 		if err != nil {
 			return err
 		}
-		result, err = q.db.ExecContext(ctx, editListBookPG, arg.BookID, arg.PurchaseHistoryID, arg.PurchaseNumber, arg.Qty, arg.TotalPrice)
+
+		result, err = q.EditListBookPG(ctx, arg.BookID, arg.PurchaseHistoryID, arg.PurchaseNumber, arg.Qty, arg.TotalPrice)
 		if err != nil {
 			return err
 		}
