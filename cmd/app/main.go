@@ -13,11 +13,11 @@ import (
 	dotenv "github.com/lpernett/godotenv"
 	"github.com/luke_design_pattern/api"
 	"github.com/luke_design_pattern/config"
-	"github.com/luke_design_pattern/db"
+	"github.com/luke_design_pattern/internal"
 )
 
 func main() {
-	err := dotenv.Load()
+	err := dotenv.Load("../../.env")
 	if err != nil {
 		log.Fatalf("%v", err)
 		return
@@ -93,7 +93,7 @@ func main() {
 		return
 	}
 
-	pg_sql := db.NewStore(db_pg, "POSTGRES")
+	pg_sql := internal.NewStore(db_pg, "POSTGRES")
 	server_api, err := api.NewServer(new_pg_conn, pg_sql)
 	if err != nil {
 		log.Fatalf("api.NewServer failed: %v", err)

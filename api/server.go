@@ -3,16 +3,16 @@ package api
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/luke_design_pattern/config"
-	"github.com/luke_design_pattern/db"
+	"github.com/luke_design_pattern/internal"
 )
 
 type Server struct {
 	config config.CredentialDB
-	store  db.Store
+	store  *internal.SQLStore
 	router *gin.Engine
 }
 
-func NewServer(config *config.CredentialDB, store db.Store) (*Server, error) {
+func NewServer(config *config.CredentialDB, store *internal.SQLStore) (*Server, error) {
 
 	server := &Server{
 		config: *config,
@@ -26,11 +26,13 @@ func NewServer(config *config.CredentialDB, store db.Store) (*Server, error) {
 
 func (server *Server) setupRouter() {
 	router := gin.Default()
+	// later kasih authorization routes
 
 	// controller rest API not method
 	router.POST("/users/createTx", server.CreateUser)
 
-	// later kasih authorization routes
+	// controller PURCHASE
+	router.GET("/purchase/datatable", server.DatatablePurchase)
 
 	server.router = router
 }

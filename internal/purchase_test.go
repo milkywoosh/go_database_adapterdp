@@ -1,8 +1,7 @@
-package purchase
+package internal
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"testing"
 
@@ -18,7 +17,7 @@ func CreatePurchaseHistory(t *testing.T) PurchaseHistory {
 		PurchaseNumber:    GenerateRandomTrxNumber(4),
 	}
 
-	result, err := testStoreOra.CreatePurchaseHistory(context.Background(), arg)
+	result, err := testStorePG.CreatePurchaseHistory(context.Background(), arg)
 	log.Printf("arg => %v", arg)
 	log.Printf("result => %v", result)
 	// log.Printf("check log error ==> %v", err)
@@ -82,39 +81,30 @@ func TestAddListBook(t *testing.T) {
 
 func TestEditListBookTx(t *testing.T) {
 
-	price := 1000.0
+	price := 2000.0
 	args := EditBookToPurchaseParams{
 		Qty:               6,
 		TotalPrice:        6 * price,
-		BookID:            2800,
-		PurchaseHistoryID: 4,
-		PurchaseNumber:    "PRCBOOK2025531955112124",
+		BookID:            28,
+		PurchaseHistoryID: 40,
+		PurchaseNumber:    "PRCBOOK2025531955112124x",
 	}
 
 	// log.Printf("bookid %d, prchistiD %d, prcNumber %s", args.BookID, args.PurchaseHistoryID, args.PurchaseNumber)
 
-	updatedRow, err := testStorePG.EditListBookTx(context.Background(), args)
-	require.NoError(t, err) // note : kenapa langsung err, how balikin err yg diinginkan!
-	require.True(t, updatedRow == 1, fmt.Sprintf("data terupdate => %d . update data harus 1 row, tidak boleh lebih atau kurang", updatedRow))
-	require.False(t, updatedRow == 0, "tidak boleh update 0 row")
-	// require.False(t, ErrUpdateNolData != nil, ErrUpdateNolData)
+	_, err := testStorePG.EditListBookTx(context.Background(), args)
+	// require.IsTypef(t, ErrUpdateNolData{}, err, "check type error")
+	require.IsType(t, ErrNegativeNumber{}, err)
+	// require.NoError(t, err) // note : kenapa langsung err, how balikin err yg diinginkan!
+	// require.True(t, updatedRow == 1, fmt.Sprintf("data terupdate => %d . update data harus 1 row, tidak boleh lebih atau kurang", updatedRow))
+	// require.False(t, updatedRow == 0, "tidak boleh update 0 row")
 	require.NoError(t, err, "check error apapun terakhir")
-}
-
-func TestAdjustStockBook(t *testing.T) {
-	bookID := 6
-	corrector := -20
-
-	err := testStorePG.AdjustStockBook(context.Background(), bookID, corrector)
-	// log.Printf("%v", ErrIDBukuTidakTerdaftar)
-	require.NoError(t, err)
-	// require.True(t, ErrIDBukuTidakTerdaftar == nil, "book is existed is NO")
 }
 
 func TestDeletePurchaseTx(t *testing.T) {
 
 	args := DeletePurchaseItemsTxParams{
-		PurchaseNumber: "PRCBOOK2025551721272004",
+		PurchaseNumber: "PRCBOOK2025551721272004X",
 	}
 
 	err := testStorePG.DeletePurchaseTx(context.Background(), args)
@@ -125,4 +115,22 @@ func TestDeletePurchaseTx(t *testing.T) {
 
 	// negative test
 	// require.IsType(t, ErrStatusNotAcceptable{}, err, err.Error())
+}
+
+func TestDatatablePurchase(t *testing.T) {
+	rowsPrc, err := testStorePG.PurchaseQueries.Datatable(context.Background())
+
+	require.NoError(t, err)
+	log.Printf("%v", rowsPrc)
+
+}
+
+func TestAdjustStockBook(t *testing.T) {
+	bookID := 6
+	corrector := -20
+
+	err := testStorePG.AdjustStockBook(context.Background(), bookID, corrector)
+	// log.Printf("%v", ErrIDBukuTidakTerdaftar)
+	require.NoError(t, err)
+	// require.True(t, ErrIDBukuTidakTerdaftar == nil, "book is existed is NO")
 }

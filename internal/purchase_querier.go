@@ -1,4 +1,4 @@
-package purchase
+package internal
 
 import (
 	"context"
@@ -8,9 +8,27 @@ import (
 	"strings"
 	"time"
 
-	"github.com/luke_design_pattern/dbx"
 	"github.com/luke_design_pattern/util"
 )
+
+type PurchaseQueries struct {
+	dbtype string
+	db     DBTX
+}
+
+func NewPurchaseQueries(db_arg DBTX, dbtype string) *PurchaseQueries {
+	return &PurchaseQueries{
+		dbtype: dbtype,
+		db:     db_arg,
+	}
+}
+
+type PurchaseQuerier interface {
+	CreatePurchaseHistory(ctx context.Context, arg CreatePurchaseHistoryParams) (PurchaseHistory, error)
+	AddListBook(ctx context.Context, arg CreateBookToPurchaseParams) (BookToPurchase, error)
+	FinalizePurchase() error
+	AdjustStockBook(ctx context.Context, bookID int, corrector int) error
+}
 
 // {
 // 	"PURCHASE_HISTORIES": [
@@ -75,14 +93,6 @@ type CreateBookToPurchaseParams struct {
 	PurchaseHistoryID int
 	Qty               int
 	TotalPrice        float64
-	PurchaseNumber    string
-}
-
-type EditBookToPurchaseParams struct {
-	Qty               int
-	TotalPrice        float64
-	BookID            int
-	PurchaseHistoryID int
 	PurchaseNumber    string
 }
 
@@ -211,7 +221,7 @@ func (q *PurchaseQueries) AddListBook(ctx context.Context, arg CreateBookToPurch
 	}
 
 	if existedOnBookList {
-		var err dbx.ErrStokBukuHabis
+		var err ErrStokBukuHabis
 		err.Msg = fmt.Sprintf("list buku %d pada purchase number %s sudah ada, lakukan edit list untuk ubah jumlah buku", arg.BookID, arg.PurchaseNumber)
 
 		return i, err
@@ -231,7 +241,7 @@ func (q *PurchaseQueries) AddListBook(ctx context.Context, arg CreateBookToPurch
 	if err != nil {
 		if err == sql.ErrNoRows {
 
-			var err dbx.ErrIDBukuTidakTerdaftar
+			var err ErrIDBukuTidakTerdaftar
 			err.Msg = fmt.Sprintf("ID buku tersebut tidak terdaftar ==> %d", arg.BookID)
 			return i, err
 		}
@@ -243,7 +253,7 @@ func (q *PurchaseQueries) AddListBook(ctx context.Context, arg CreateBookToPurch
 
 	if bookModel.StockQty < 1 {
 
-		var err dbx.ErrStokBukuHabis
+		var err ErrStokBukuHabis
 		err.Msg = fmt.Sprintln("stock buku habis")
 		return i, err
 	}
@@ -251,7 +261,7 @@ func (q *PurchaseQueries) AddListBook(ctx context.Context, arg CreateBookToPurch
 	// check kuota < permintaan
 	if bookModel.StockQty < arg.Qty {
 
-		var err dbx.ErrStokBukuKurang
+		var err ErrStokBukuKurang
 		err.Msg = fmt.Sprintln("gagal, jumlah pembelian buku melebihi stok persediaan")
 		return i, err
 	}
@@ -274,157 +284,6 @@ func (q *PurchaseQueries) AddListBook(ctx context.Context, arg CreateBookToPurch
 	}
 
 	return i, nil
-}
-
-const editListBookPG string = `
-	update purchase_items 
-		set qty = $4,
-		total_price = $5
-	where book_id = $1
-		and purchase_history_id = $2
-		and purchase_number = $3
-`
-const lockRowEditListBookPG string = `
-	SELECT 1
-	FROM purchase_items
-	WHERE book_id = $1
-		AND purchase_history_id = $2
-		AND purchase_number = $3
-	FOR UPDATE
-`
-
-// jika ingin mengubah jumlah list book
-func (store *PurchaseStore) EditListBookTx(ctx context.Context, arg EditBookToPurchaseParams) (int64, error) {
-	var err error
-	var result sql.Result
-	var rowsAffected int64
-	// note misalnya tidak dalam transaksi, apakah akan terjadi update sebagian??? setelah tested result: iya
-	// note jika akan melakukan beberapa operasi UPDATE, INSERT disertai logic harus dalam *SQLStore execTx() function!!!
-
-	err = store.execTx(ctx, func(q *PurchaseQueries) error {
-		_, err = q.db.ExecContext(ctx, lockRowEditListBookPG, arg.BookID, arg.PurchaseHistoryID, arg.PurchaseNumber)
-		if err != nil {
-			return err
-		}
-		result, err = q.db.ExecContext(ctx, editListBookPG, arg.BookID, arg.PurchaseHistoryID, arg.PurchaseNumber, arg.Qty, arg.TotalPrice)
-		if err != nil {
-			return err
-		}
-
-		rowsAffected, err = result.RowsAffected()
-		if err != nil {
-			return err
-		}
-
-		if rowsAffected < 1 {
-			var err dbx.ErrUpdateNolData
-			err.Msg = fmt.Sprintln("error, tidak ada data terupdate")
-			return err
-		}
-		if rowsAffected > 1 {
-
-			var err dbx.ErrUpdateMultipleData
-			err.Msg = fmt.Sprintf("error, terupdate ==> %d data", rowsAffected)
-			return err
-		}
-
-		return nil
-	})
-
-	return rowsAffected, err
-
-}
-
-type DeletePurchaseItemsTxParams struct {
-	PurchaseNumber string
-}
-
-const lockRowPurchaseItemsByPurchaseNumberPG string = `
-	SELECT 1
-		FROM purchase_items
-		WHERE purchase_number = $1
-	FOR UPDATE
-`
-const fetchStatusPurchaseNumberPG string = `
-	SELECT ph.status 
-		FROM purchase_histories ph
-	WHERE ph.purchase_number = $1
-`
-
-const deletePurchaseItemsPG string = `
-	DELETE FROM purchase_items
-	WHERE purchase_number = $1
-`
-
-const deletePurchaseHistoryPG string = `
-	DELETE FROM purchase_histories
-	WHERE purchase_number = $1
-`
-
-func (store *PurchaseStore) DeletePurchaseTx(ctx context.Context, args DeletePurchaseItemsTxParams) error {
-	// param : purchase_number
-
-	// if status != "pending" {
-	// purchase_number berikut ==> tidak dapat dihapus. Status sudah 'completed'
-	// }
-
-	// << transaction >>
-	// lock rows by purchase_number
-	// delete operation by purchase_number
-
-	var err error
-	var PurchaseHistories PurchaseHistory
-
-	if store.dbtype == "POSTGRES" {
-		err = store.execTx(ctx, func(q *PurchaseQueries) error {
-
-			_, err = q.db.ExecContext(ctx, lockRowPurchaseItemsByPurchaseNumberPG, args.PurchaseNumber)
-
-			if err != nil {
-				return err
-			}
-
-			// check status
-			err = q.db.QueryRowContext(ctx, fetchStatusPurchaseNumberPG, args.PurchaseNumber).Scan(
-				&PurchaseHistories.Status,
-			)
-			if err != nil {
-				return err
-			}
-
-			if PurchaseHistories.Status != "pending" {
-				var err dbx.ErrStatusNotAcceptable
-				err.Msg = fmt.Sprintf("status saat ini ==> '%s' sehingga tidak dapat proses penghapusan", PurchaseHistories.Status)
-				return err
-			}
-
-			_, err = q.db.ExecContext(ctx, deletePurchaseItemsPG, args.PurchaseNumber)
-			if err != nil {
-				return err
-			}
-
-			_, err = q.db.ExecContext(ctx, deletePurchaseHistoryPG, args.PurchaseNumber)
-			if err != nil {
-				return err
-			}
-
-			return err
-		})
-
-		return err
-
-	} else if store.dbtype == "ORACLE" {
-		var err dbx.ErrDBTypeNotImplemented
-		err.Msg = fmt.Sprintf("DB Type is not currently implemented ==> %s", store.dbtype)
-		return err
-	} else {
-		var err dbx.ErrDBTypeNotImplemented
-		err.Msg = fmt.Sprintf("DB Type is not currently implemented ==> %s", store.dbtype)
-		return err
-	}
-
-	// return fmt.Errorf("not implemented yet %s", "not ready")
-
 }
 
 func (q *PurchaseQueries) FinalizePurchase() error {
@@ -451,13 +310,13 @@ func (q *PurchaseQueries) AdjustStockBook(ctx context.Context, bookID int, corre
 
 	if corrector < 1 {
 		// this struct is error and implement error interface
-		return dbx.ErrNegativeNumber{
+		return ErrNegativeNumber{
 			Msg: fmt.Sprintf("nilai corrector negatif ==> %d silahkan sesuaikan", corrector),
 		}
 	}
 
 	if bookID < 1 {
-		var err dbx.ErrIDBukuTidakTerdaftar
+		var err ErrIDBukuTidakTerdaftar
 		err.Msg = fmt.Sprintf("ID buku berikut tidak terdaftar ==> %d", bookID)
 		return err
 	}
@@ -472,7 +331,7 @@ func (q *PurchaseQueries) AdjustStockBook(ctx context.Context, bookID int, corre
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			var err dbx.ErrIDBukuTidakTerdaftar
+			var err ErrIDBukuTidakTerdaftar
 			err.Msg = fmt.Sprintf("ID buku berikut tidak terdaftar ==> %d", bookID)
 			return err
 		}
@@ -481,14 +340,14 @@ func (q *PurchaseQueries) AdjustStockBook(ctx context.Context, bookID int, corre
 	}
 
 	if currentQty < 1 {
-		var err dbx.ErrStokBukuHabis
+		var err ErrStokBukuHabis
 		err.Msg = fmt.Sprintf("stock saat ini tidak cukup ==> %d tidak dapat dikurang lagi", currentQty)
 		return err
 	}
 	var resultAdjust = currentQty + corrector
 
 	if resultAdjust < 0 {
-		var err dbx.ErrNegativeNumber
+		var err ErrNegativeNumber
 		err.Msg = fmt.Sprintf("nilai corrector menyebabkan nilai stock negatif ==> %d silahkan sesuaikan", resultAdjust)
 		return err
 	}
@@ -503,10 +362,120 @@ func (q *PurchaseQueries) AdjustStockBook(ctx context.Context, bookID int, corre
 		return err
 	}
 	if rowAffected < 1 {
-		var err dbx.ErrUpdateNolData
+		var err ErrUpdateNolData
 		err.Msg = fmt.Sprintf("error, data terupdate %d/!/", rowAffected)
 		return err
 	}
 
 	return nil
+}
+
+type PurchaseDatatable struct {
+	PurchaseNumber string     `json:"purchase_number"`
+	Qty            int        `json:"qty"`
+	BookTitle      string     `json:"book_title"`
+	TotalPrice     float64    `json:"total_price"`
+	EachPrice      float64    `json:"each_price"`
+	DateOfSale     *time.Time `json:"date_of_sale"`
+	Status         string     `json:"status"`
+}
+
+func (q *PurchaseQueries) Datatable(ctx context.Context) ([]PurchaseDatatable, error) {
+
+	queryDatatable := `
+		select 
+			pi.purchase_number as purchase_number,
+			pi.total_price,
+			pi.qty,
+			b.title,
+			b.price as price_each,
+			ph.date_of_sale,
+			ph.status
+		from purchase_items pi
+		left join books b on b.id = pi.book_id 
+		left join purchase_histories ph on ph.id = pi.purchase_history_id
+		where pi.purchase_number IS NOT NULL
+	`
+	rows, err := q.db.QueryContext(ctx, queryDatatable)
+	if err != nil {
+		return nil, fmt.Errorf("err query ctx Prc Datatable: %w", err)
+	}
+	defer rows.Close()
+
+	var PrcDatas []PurchaseDatatable
+
+	for rows.Next() {
+		var PrcData PurchaseDatatable
+		if err := rows.Scan(
+			&PrcData.PurchaseNumber,
+			&PrcData.TotalPrice,
+			&PrcData.Qty,
+			&PrcData.BookTitle,
+			&PrcData.EachPrice,
+			&PrcData.DateOfSale,
+			&PrcData.Status,
+		); err != nil {
+			return nil, fmt.Errorf("err rows loop Prc Datatable: %w", err)
+		}
+
+		PrcDatas = append(PrcDatas, PrcData)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("err rows Prc Datatable: %w", err)
+	}
+
+	return PrcDatas, nil
+
+}
+
+func (q *PurchaseQueries) LockRowPrcItemByPrcNumber(ctx context.Context, purchaseNumber string) error {
+	const lockRowPurchaseItemsByPurchaseNumberPG string = `
+		SELECT purchase_number
+			FROM purchase_items
+			WHERE purchase_number = $1
+		FOR UPDATE
+	`
+	_, err := q.db.ExecContext(ctx, lockRowPurchaseItemsByPurchaseNumberPG, purchaseNumber)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (q *PurchaseQueries) CheckStatusPurchase(ctx context.Context, purchaseNumber string) (string, error) {
+	var status string
+	const fetchStatusPurchaseNumberPG string = `
+		SELECT ph.status 
+			FROM purchase_histories ph
+		WHERE ph.purchase_number = $1
+	`
+	err := q.db.QueryRowContext(ctx, fetchStatusPurchaseNumberPG, purchaseNumber).Scan(
+		&status,
+	)
+	if err != nil {
+		return "", fmt.Errorf("err check status purchase: %w", err)
+	}
+	return status, nil
+}
+
+func (q *PurchaseQueries) DeletePrcItemWithHistory(ctx context.Context, purchaseNumber string) error {
+	const deletePurchaseItemsPG string = `
+		DELETE FROM purchase_items
+		WHERE purchase_number = $1
+	`
+
+	const deletePurchaseHistoryPG string = `
+		DELETE FROM purchase_histories
+		WHERE purchase_number = $1
+	`
+	_, err := q.db.ExecContext(ctx, deletePurchaseItemsPG, purchaseNumber)
+	if err != nil {
+		return fmt.Errorf("err delete purchase item: %w", err)
+	}
+
+	_, err = q.db.ExecContext(ctx, deletePurchaseHistoryPG, purchaseNumber)
+	if err != nil {
+		return fmt.Errorf("err delete purchase history: %w", err)
+	}
 }

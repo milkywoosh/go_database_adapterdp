@@ -1,4 +1,4 @@
-package dbx
+package internal
 
 import (
 	"database/sql"
@@ -14,8 +14,8 @@ import (
 	"github.com/luke_design_pattern/config"
 )
 
-var testStoreOra Store
-var testStorePG Store
+var testStoreOra *SQLStore
+var testStorePG *SQLStore
 
 func TestMain(m *testing.M) {
 
@@ -94,6 +94,7 @@ func TestMain(m *testing.M) {
 	}
 
 	testStoreOra = NewOra(db_ora).GetConn()
+
 	testStorePG = NewPG(db_pg).GetConn()
 
 	os.Exit(m.Run())

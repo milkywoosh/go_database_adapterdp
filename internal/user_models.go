@@ -1,4 +1,4 @@
-package user
+package internal
 
 type Book struct {
 	BookID   int
@@ -25,4 +25,9 @@ type CreateUserParams struct {
 	Firstname string
 	Lastname  string
 	Password  string
+}
+
+type CreateUserTxParams struct {
+	CreateUserParams
+	AfterCreate func(user Users) error
 }

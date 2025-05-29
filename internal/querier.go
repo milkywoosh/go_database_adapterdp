@@ -1,8 +1,4 @@
-package dbx
-
-type CreateUserParams struct {
-	Username, Email, Firstname, Lastname, Password string
-}
+package internal
 
 // type Querier interface {
 // 	CreateUser(ctx context.Context, arg CreateUserParams) (Users, error)

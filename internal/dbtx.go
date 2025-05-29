@@ -1,4 +1,4 @@
-package dbx
+package internal
 
 import (
 	"context"
@@ -13,20 +13,20 @@ type DBTX interface {
 
 // DBTX interface => *sql.DB => karena implement 3 signatures
 type Queries struct {
-	DBtype string
-	DB     DBTX
+	dbtype string
+	db     DBTX
 }
 
 // constructor
 func New(db_arg DBTX, dbtype_arg string) *Queries {
 	return &Queries{
-		DBtype: dbtype_arg,
-		DB:     db_arg,
+		dbtype: dbtype_arg,
+		db:     db_arg,
 	}
 }
 
 type OraAdapter struct {
-	Adaptee Store // di-implementasi *SQLStore
+	Adaptee *SQLStore // di-implementasi *SQLStore
 }
 
 func NewOra(db_arg *sql.DB) *OraAdapter {
@@ -35,12 +35,12 @@ func NewOra(db_arg *sql.DB) *OraAdapter {
 	}
 }
 
-func (oa *OraAdapter) GetConn() Store {
+func (oa *OraAdapter) GetConn() *SQLStore {
 	return oa.Adaptee
 }
 
 type PgAdapter struct {
-	Adaptee Store
+	Adaptee *SQLStore
 }
 
 func NewPG(db_arg *sql.DB) *PgAdapter {
@@ -49,6 +49,6 @@ func NewPG(db_arg *sql.DB) *PgAdapter {
 	}
 }
 
-func (oa *PgAdapter) GetConn() Store {
+func (oa *PgAdapter) GetConn() *SQLStore {
 	return oa.Adaptee
 }

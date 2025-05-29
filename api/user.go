@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/luke_design_pattern/db"
+	"github.com/luke_design_pattern/internal"
 )
 
 type CreateUserRequest struct {
@@ -35,7 +35,7 @@ func (server *Server) CreateUser(c *gin.Context) {
 		return
 	}
 
-	userParams := db.CreateUserParams{
+	userParams := internal.CreateUserParams{
 		Username:  req.Username,
 		Email:     req.Email,
 		Firstname: req.Firstname,
@@ -43,13 +43,14 @@ func (server *Server) CreateUser(c *gin.Context) {
 		Password:  req.Password,
 	}
 
-	args := db.CreateUserTxParams{
+	args := internal.CreateUserTxParams{
 		CreateUserParams: userParams,
-		AfterCreate: func(user db.Users) error {
+		AfterCreate: func(user internal.Users) error {
 			return nil
 		},
 	}
 
+	// users, err := server.store.CreateUserTx(ctx, args)
 	users, err := server.store.CreateUserTx(ctx, args)
 	if err != nil {
 		// catch err from db driver

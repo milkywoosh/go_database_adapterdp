@@ -1,9 +1,7 @@
-package purchase
+package internal
 
 import "time"
 
-type CreatePurchaseBookTxParams struct{}
-type CreatePurchaseBookTxResult struct{}
 type PurchaseBook struct {
 	Date              *time.Time
 	BookID            int
@@ -29,10 +27,17 @@ type PurchaseItem struct {
 	TotalPrice float64
 }
 
-type Book struct {
-	BookID   int
-	Title    string
-	Price    float64
-	StockQty int
-	AuthorID int
+type DeletePurchaseItemsTxParams struct {
+	PurchaseNumber string
+}
+
+type CreatePurchaseBookTxParams struct{}
+type CreatePurchaseBookTxResult struct{}
+
+type EditBookToPurchaseParams struct {
+	Qty               int
+	TotalPrice        float64
+	BookID            int
+	PurchaseHistoryID int
+	PurchaseNumber    string
 }

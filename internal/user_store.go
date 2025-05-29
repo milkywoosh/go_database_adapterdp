@@ -1,8 +1,26 @@
-package user
+package internal
 
 import (
 	"context"
+	"database/sql"
 )
+
+type UserStoreTx interface {
+	CreateUserTx(ctx context.Context, arg CreateUserTxParams) (CreateUserTxResult, error)
+	AssignRoleTx(ctx context.Context, arg CreateUserTxParams) (CreateUserTxResult, error)
+}
+
+type UserStore struct {
+	connPool     *sql.DB
+	*UserQueries // the sqlc-generated querier
+}
+
+func NewUserStore(db *sql.DB, dbtype string) *UserStore {
+	return &UserStore{
+		connPool:    db,
+		UserQueries: NewUserQuery(db, dbtype),
+	}
+}
 
 // NOTE: khusus query ORACLE => placeholder :1, :2, :3
 // NOTE: performance consideration param using slice string{"field1", "field2", "field3"}
@@ -39,61 +57,6 @@ INSERT INTO USERS (
 
 */
 // for now disini dulu!
-func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (Users, error) {
-
-	if q.dbtype == "ORACLE" {
-		var i Users
-		var err error
-		_, err = q.db.ExecContext(ctx, createUserOra,
-			arg.Username,
-			arg.Email,
-			arg.Firstname,
-			arg.Lastname,
-			arg.Password,
-			sql.Out{Dest: &i.Username},
-			sql.Out{Dest: &i.Email},
-			sql.Out{Dest: &i.Firstname},
-			sql.Out{Dest: &i.Lastname},
-		)
-
-		return i, err
-	} else if q.dbtype == "POSTGRES" {
-		var i Users
-		var err error = q.db.QueryRowContext(ctx, createUserPG,
-			arg.Username,
-			arg.Email,
-			arg.Firstname,
-			arg.Lastname,
-			arg.Password,
-		).Scan(
-			&i.Username,
-			&i.Email,
-			&i.Firstname,
-			&i.Lastname,
-		)
-
-		if err != nil {
-			return i, err
-		}
-
-		return i, err
-	} else {
-		var i Users
-		var err error = fmt.Errorf("dbtype is not recognized")
-		return i, err
-	}
-
-}
-
-type CreateUserTxParams struct {
-	CreateUserParams
-<<<<<<< HEAD:db/tx_create_user.go
-=======
-
->>>>>>> trial_abstract:dbx/user/transaction.go
-	AfterCreate func(user Users) error // note: diisi function APAPUN yg penting passing argument tipe Users dan return Error!
-}
-
 func (store *UserStore) CreateUserTx(ctx context.Context, arg CreateUserTxParams) (CreateUserTxResult, error) {
 	var result CreateUserTxResult
 
