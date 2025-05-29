@@ -2,6 +2,7 @@ package internal
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"testing"
 
@@ -52,16 +53,15 @@ func TestCreatePurchaseHistory(t *testing.T) {
 
 func TestAddListBook(t *testing.T) {
 	// purchaseHistoryID := CreatePurchaseHistory(t).PurchaseID
-	purchaseHistoryID := 6
-
+	purchaseHistoryID := 7
+	// 4,5,7,9
 	arg := CreateBookToPurchaseParams{
-		BookID:            3,
+		BookID:            13,
 		PurchaseHistoryID: purchaseHistoryID,
 		Qty:               2,
-		TotalPrice:        2000.0,
-		PurchaseNumber:    "PRCBOOK2025551721272004",
+		PurchaseNumber:    "PRCBOOK20255292149696264",
 	}
-
+	fmt.Println(arg)
 	// var bookToPurchase BookToPurchase
 	var err error
 	_, err = testStorePG.AddListBook(context.Background(), arg)
@@ -104,7 +104,7 @@ func TestEditListBookTx(t *testing.T) {
 func TestDeletePurchaseTx(t *testing.T) {
 
 	args := DeletePurchaseItemsTxParams{
-		PurchaseNumber: "PRCBOOK2025551721272004X",
+		PurchaseNumber: "PRCBOOK20255292149696264",
 	}
 
 	err := testStorePG.DeletePurchaseTx(context.Background(), args)

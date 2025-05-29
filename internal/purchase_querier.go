@@ -180,10 +180,12 @@ const fetchBookPG = `
 	FROM BOOKS b WHERE b.ID = $1
 `
 const checkExistedBookListPG string = `
-	SELECT pi.ID FROM PURCHASE_ITEMS pi
-	WHERE pi.PURCHASE_NUMBER = $1
-	AND pi.PURCHASE_HISTORY_ID = $2
-	AND pi.BOOK_ID = $3
+	SELECT 
+		pi.ID 
+	FROM PURCHASE_ITEMS pi
+		WHERE pi.PURCHASE_NUMBER = $1
+		AND pi.PURCHASE_HISTORY_ID = $2
+		AND pi.BOOK_ID = $3
 `
 
 const createNewPurchaseItemsBookOra = `
@@ -438,6 +440,9 @@ func (q *PurchaseQueries) LockRowPrcItemByPrcNumber(ctx context.Context, purchas
 	`
 	_, err := q.db.ExecContext(ctx, lockRowPurchaseItemsByPurchaseNumberPG, purchaseNumber)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			return fmt.Errorf("err purchase number ==> %s tidak ditemukan", purchaseNumber)
+		}
 		return err
 	}
 	return nil
@@ -454,6 +459,9 @@ func (q *PurchaseQueries) CheckStatusPurchase(ctx context.Context, purchaseNumbe
 		&status,
 	)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			return "", fmt.Errorf("err purchase number ==> %s tidak ditemukan", purchaseNumber)
+		}
 		return "", fmt.Errorf("err check status purchase: %w", err)
 	}
 	return status, nil
@@ -478,4 +486,5 @@ func (q *PurchaseQueries) DeletePrcItemWithHistory(ctx context.Context, purchase
 	if err != nil {
 		return fmt.Errorf("err delete purchase history: %w", err)
 	}
+	return nil
 }

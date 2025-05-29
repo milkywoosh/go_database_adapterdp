@@ -33,6 +33,7 @@ func (server *Server) setupRouter() {
 
 	// controller PURCHASE
 	router.GET("/purchase/datatable", server.DatatablePurchase)
+	router.DELETE("/purchase/delete/:prc_number", server.DeletePurchase)
 
 	server.router = router
 }
@@ -43,6 +44,6 @@ func (server *Server) Start(address string) error {
 
 func errorResponse(err error) gin.H {
 	return gin.H{
-		"error": err.Error(),
+		"error_message": err.Error(),
 	}
 }
