@@ -134,3 +134,17 @@ func (store *PurchaseStore) DeletePurchaseTx(ctx context.Context, args DeletePur
 	// return fmt.Errorf("not implemented yet %s", "not ready")
 
 }
+
+func (store *PurchaseStore) FinalizePurchaseTx(ctx context.Context, purchaseNumber string) error {
+
+	err := store.execTx(ctx, func(q *PurchaseQueries) error {
+
+		err := q.AdjustBookQuantity(ctx, purchaseNumber)
+		if err != nil {
+			return fmt.Errorf("err adjust book qty %w", err)
+		}
+		return nil
+	})
+
+	return fmt.Errorf("not implemented yet %v", err)
+}

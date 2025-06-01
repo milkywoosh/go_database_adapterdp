@@ -252,10 +252,6 @@ func (q *PurchaseQueries) AddListBook(ctx context.Context, arg CreateBookToPurch
 	return i, nil
 }
 
-func (q *PurchaseQueries) FinalizePurchase() error {
-	return fmt.Errorf("not implemented yet %s", "not ready")
-}
-
 const lockRowBook string = `
 	SELECT 1
 	FROM books
@@ -473,4 +469,90 @@ func (q *PurchaseQueries) EditListBookPG(ctx context.Context, bookID int, prcHis
 		return nil, err
 	}
 	return result, nil
+}
+
+func (q *PurchaseQueries) FinalizePurchaseHistory(ctx context.Context, purchaseNumber string, totalPrice float64) error {
+	// edit total_price_payment = all price sum
+	// edit status = 'completed'
+
+	const query string = `
+		update purchase_histories
+			set total_price_payment = $1
+			status = 'completed'
+			date_of_sale = current_datetime
+		where purchase_histories.purchase_number = $2
+	`
+
+	_, err := q.db.ExecContext(ctx, query, purchaseNumber, totalPrice)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (q *PurchaseQueries) AdjustBookQuantity(ctx context.Context, purchaseNumber string) error {
+	// fungsi ini untuk melalukan penyesuaian pada stock qty pada books table db
+	// get all purchase_items
+	const fetchAllPrcItem string = `
+	select 
+		book_id,
+		qty
+	from purchase_items
+		where purchase_number = $1
+	order by book_id ASC
+	`
+	rows, err := q.db.QueryContext(ctx, fetchAllPrcItem, purchaseNumber)
+	if err != nil {
+		return err
+	}
+
+	defer rows.Close()
+
+	var prc_items []PurchaseItem
+
+	for rows.Next() {
+		var prc_item PurchaseItem
+
+		if err := rows.Scan(
+			&prc_item.BookID,
+			&prc_item.Qty,
+		); err != nil {
+			return err
+		}
+		log.Printf("check prc %v", prc_item)
+		prc_items = append(prc_items, prc_item)
+	}
+
+	// bookIDs := []int{}
+	var listIDString strings.Builder
+
+	// get each qty
+	for i, val := range prc_items {
+		if i < len(prc_items)-1 {
+			listIDString.WriteString(fmt.Sprintf("'%d', ", val.BookID))
+		} else {
+			listIDString.WriteString(fmt.Sprintf("'%d'", val.BookID))
+
+		}
+		// bookIDs = append(bookIDs, val.BookID)
+	}
+
+	// lock for update nowait book ??
+	lockBooksQuery := fmt.Sprintf(`
+		select * from books
+		where id in(%s)
+		for update
+		
+	`, listIDString.String())
+
+	log.Printf("%s", lockBooksQuery)
+
+	_, err = q.db.ExecContext(ctx, lockBooksQuery, nil)
+	if err != nil {
+		return fmt.Errorf("err lock adjust book qty: %w", err)
+	}
+
+	// update decrement to books qty in book table
+
+	return nil
 }
