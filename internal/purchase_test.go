@@ -53,13 +53,13 @@ func TestCreatePurchaseHistory(t *testing.T) {
 
 func TestAddListBook(t *testing.T) {
 	// purchaseHistoryID := CreatePurchaseHistory(t).PurchaseID
-	purchaseHistoryID := 11
+	purchaseHistoryID := 16
 	// 4,5,7,9
 	arg := CreateBookToPurchaseParams{
-		BookID:            21,
+		BookID:            23,
 		PurchaseHistoryID: purchaseHistoryID,
 		Qty:               2,
-		PurchaseNumber:    "PRCBOOK20255292251294414",
+		PurchaseNumber:    "PRCBOOK202553044482744",
 	}
 	fmt.Println(arg)
 	// var bookToPurchase BookToPurchase
@@ -133,4 +133,12 @@ func TestAdjustStockBook(t *testing.T) {
 	// log.Printf("%v", ErrIDBukuTidakTerdaftar)
 	require.NoError(t, err)
 	// require.True(t, ErrIDBukuTidakTerdaftar == nil, "book is existed is NO")
+}
+
+func TestFinalizePurchaseTx(t *testing.T) {
+
+	prc_number := "PRCBOOK202553044482744"
+	err := testStorePG.FinalizePurchaseTx(context.Background(), prc_number)
+	require.NoError(t, err, "check err Finalize Purchase")
+
 }
