@@ -9,6 +9,15 @@ import (
 	"github.com/luke_design_pattern/internal"
 )
 
+// CreatePurchase godoc
+// @Summary      Create a new Purchase
+// @Description  Create a new Purchase for detail
+// @Tags         purchase
+// @Accept       json
+// @Produce      json
+// @Param        id   path      int  true  "purchase ID"
+// @Success      200  {object}  map[string]string
+// @Router       /purchase/createTx [post]
 func (server *Server) CreatePurchase(ctx *gin.Context) {
 
 }

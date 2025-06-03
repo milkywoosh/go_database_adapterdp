@@ -14,8 +14,33 @@ import (
 	"github.com/luke_design_pattern/api"
 	"github.com/luke_design_pattern/config"
 	"github.com/luke_design_pattern/internal"
+
+	// gin-swagger middleware
+	// swagger embed files
+	_ "github.com/luke_design_pattern/cmd/app/docs"
+	_ "github.com/swaggo/files"
+	_ "github.com/swaggo/swag"
 )
 
+// @title           Swagger LukeAul API
+// @version         1.0
+// @description     This is a sample server celler server.
+// @termsOfService  http://swagger.io/terms/
+
+// @contact.name   API Support
+// @contact.url    http://www.swagger.io/support
+// @contact.email  support@swagger.io
+
+// @license.name  Apache 2.0
+// @license.url   http://www.apache.org/licenses/LICENSE-2.0.html
+
+// @host      localhost:8080
+// @BasePath  /api/v1
+
+// @securityDefinitions.basic  BasicAuth
+
+// @externalDocs.description  OpenAPI
+// @externalDocs.url          https://swagger.io/resources/open-api/
 func main() {
 	err := dotenv.Load("../../.env")
 	if err != nil {

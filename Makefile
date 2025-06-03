@@ -103,3 +103,6 @@ datatable_prc:
 	left join purchase_histories ph on ph.id = pi.purchase_history_id \
 	where pi.purchase_number IS NOT NULL \
 	"
+.PHONY: swagger
+swagger:
+	swag init --generalInfo cmd/app/main.go --output cmd/app/docs --parseDependency --parseInternal

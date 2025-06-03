@@ -20,6 +20,15 @@ type CreateUserRequest struct {
 	Password  string `json:"password" binding:"required,min=6"`
 }
 
+// GetUser godoc
+// @Summary      Get a user
+// @Description  get user by ID
+// @Tags         users
+// @Accept       json
+// @Produce      json
+// @Param        id   path      int  true  "User ID"
+// @Success      200  {object}  map[string]string
+// @Router       /users/createTx [post]
 func (server *Server) CreateUser(c *gin.Context) {
 
 	ctx := c.Request.Context()

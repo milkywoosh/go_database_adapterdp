@@ -2,8 +2,12 @@ package api
 
 import (
 	"github.com/gin-gonic/gin"
+	_ "github.com/luke_design_pattern/cmd/app/docs"
 	"github.com/luke_design_pattern/config"
 	"github.com/luke_design_pattern/internal"
+	swaggerFiles "github.com/swaggo/files"
+	swagger "github.com/swaggo/gin-swagger"
+	_ "github.com/swaggo/swag"
 )
 
 type Server struct {
@@ -26,6 +30,8 @@ func NewServer(config *config.CredentialDB, store *internal.SQLStore) (*Server, 
 
 func (server *Server) setupRouter() {
 	router := gin.Default()
+
+	router.GET("/swagger/*any", swagger.WrapHandler(swaggerFiles.Handler))
 	// later kasih authorization routes
 
 	// controller rest API not method

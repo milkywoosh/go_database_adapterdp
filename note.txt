@@ -54,3 +54,24 @@ project
 ├── configs                # Configuration files
 ├── go.mod                 # Go module definition
 └── go.sum                 # Go module checksum file
+
+
+============================================================
+generate swagger-GIN
+
+import
+_ "github.com/swaggo/files"
+_ "github.com/swaggo/swag"
+
+go to cmd/app directory where main.go existed
+run swag init
+
+add _ "github.com/luke_design_pattern/cmd/app/docs" in main.go
+make sure it show where docs dir is located
+- add command @title @version and etc to auto generate to swagger
+- add ==> 	router.GET("/swagger/*any", swagger.WrapHandler(swaggerFiles.Handler)) inside router management
+- run "swag init"
+- run app
+
+swag init --generalInfo cmd/app/main.go --output cmd/app/docs --parseDependency --parseInternal
+ swag init --generalInfo ./cmd/app/main.go --output ./cmd/app/docs --parseDependency --parseInternal
