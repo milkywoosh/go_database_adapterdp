@@ -1,4 +1,45 @@
 basePath: /api/v1
+definitions:
+  api.CreateUserRequest:
+    properties:
+      email:
+        type: string
+      firstname:
+        type: string
+      lastname:
+        type: string
+      password:
+        minLength: 6
+        type: string
+      username:
+        type: string
+    required:
+    - email
+    - firstname
+    - lastname
+    - password
+    - username
+    type: object
+  api.CreateUserTxResult:
+    properties:
+      email:
+        type: string
+      firstname:
+        type: string
+      lastname:
+        type: string
+      username:
+        type: string
+    type: object
+  api.ErrorResponse:
+    properties:
+      code:
+        example: 400
+        type: integer
+      error:
+        example: invalid request body
+        type: string
+    type: object
 externalDocs:
   description: OpenAPI
   url: https://swagger.io/resources/open-api/
@@ -43,23 +84,26 @@ paths:
     post:
       consumes:
       - application/json
-      description: get user by ID
+      description: Creating New User which never existed before
       parameters:
-      - description: User ID
-        in: path
-        name: id
+      - description: request for creating new user
+        in: body
+        name: request
         required: true
-        type: integer
+        schema:
+          $ref: '#/definitions/api.CreateUserRequest'
       produces:
       - application/json
       responses:
         "200":
-          description: OK
+          description: reponse if success creating new user
           schema:
-            additionalProperties:
-              type: string
-            type: object
-      summary: Get a user
+            $ref: '#/definitions/api.CreateUserTxResult'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Create New User of App
       tags:
       - users
 securityDefinitions:
