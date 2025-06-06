@@ -1,6 +1,7 @@
 package api
 
 import (
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	_ "github.com/luke_design_pattern/cmd/app/docs"
 	"github.com/luke_design_pattern/config"
@@ -35,7 +36,7 @@ func (server *Server) setupRouter() {
 	// later kasih authorization routes
 
 	// controller rest API not method
-	router.POST("/users/createTx", server.CreateUser)
+	router.POST("/users/create", server.CreateUser)
 
 	// controller PURCHASE
 	router.GET("/purchase/datatable", server.DatatablePurchase)
@@ -44,19 +45,41 @@ func (server *Server) setupRouter() {
 	server.router = router
 }
 
+func (server *Server) SetupCORS() {
+	server.router.Use(cors.New(cors.Config{
+		AllowOrigins: []string{"http://localhost:8000"}, // your Swagger UI origin must be allowed
+		AllowMethods: []string{"GET", "POST", "PUT", "DELETE"},
+		AllowHeaders: []string{"Origin", "Content-Type"},
+	}))
+}
+
 func (server *Server) Start(address string) error {
+	server.SetupCORS()
 	return server.router.Run(address)
 }
 
-func errorResponse(err error) gin.H {
+type ErrorResponse struct {
+	Message    string `json:"message" example:"invalid request body"`
+	StatusCode int    `json:"status_code" example:"400"`
+}
+
+func errorResponse(err error, statusCode int) gin.H {
 	return gin.H{
-		"message": err.Error(),
+		"message":     err.Error(),
+		"status_code": statusCode,
 	}
 }
 
-func successResponse(msg string, data any) gin.H {
+type SuccessResponse struct {
+	Message    string `json:"message"`
+	Data       any    `json:"data"`
+	StatusCode int    `json:"status_code" example:"200"`
+}
+
+func successResponse(msg string, data any, statusCode int) gin.H {
 	return gin.H{
-		"message": msg,
-		"data":    data,
+		"message":     msg,
+		"data":        data,
+		"status_code": statusCode,
 	}
 }

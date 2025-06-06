@@ -28,7 +28,7 @@ type PurchaseItem struct {
 }
 
 type DeletePurchaseItemsTxParams struct {
-	PurchaseNumber string
+	PurchaseNumber string `json:"purchase_number"`
 }
 
 type CreatePurchaseBookTxParams struct{}

@@ -9,11 +9,11 @@ type Book struct {
 }
 
 type Users struct {
-	Username,
-	Email,
-	Firstname,
-	Lastname,
-	PasswordHistoryCount string
+	Username             string `json:"username"`
+	Email                string `json:"email"`
+	Firstname            string `json:"firstname"`
+	Lastname             string `json:"lastname"`
+	PasswordHistoryCount string `json:"password_history_count"`
 }
 
 type LoginUserTxParams struct {

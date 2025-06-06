@@ -17,7 +17,7 @@ import (
 // @Produce      json
 // @Param        id   path      int  true  "purchase ID"
 // @Success      200  {object}  map[string]string
-// @Router       /purchase/createTx [post]
+// @Router       /purchase/create [post]
 func (server *Server) CreatePurchase(ctx *gin.Context) {
 
 }
@@ -37,6 +37,22 @@ type DeletePRCParams struct {
 	PrcNumber string `uri:"prc_number" binding:"required"`
 }
 
+type DeletePurchaseSuccessResponse struct {
+	Message    string                               `json:"message"`
+	Data       internal.DeletePurchaseItemsTxParams `json:"data"`
+	StatusCode int                                  `json:"status_code" example:"200"`
+}
+
+// DeletePurchase godoc
+// @Summary      Delete Purchase
+// @Description  Deletion proccess can only be done if it is not completed
+// @Tags         purchase
+// @Accept       json
+// @Produce      json
+// @Param        id   path      int  true  "purchase ID"
+// @Success      200  {object}  DeletePurchaseSuccessResponse "Success delete purchase"
+// @Failure 	 400 {object} ErrorResponse "Bad Request"
+// @Router       /purchase/delete/{id} [delete]
 func (server *Server) DeletePurchase(c *gin.Context) {
 	// uri
 	// purchase/delete/:prc_number
@@ -44,7 +60,7 @@ func (server *Server) DeletePurchase(c *gin.Context) {
 
 	err := c.ShouldBindUri(&params)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, errorResponse(err))
+		c.JSON(http.StatusBadRequest, errorResponse(err, http.StatusBadRequest))
 		return
 	}
 	args := internal.DeletePurchaseItemsTxParams{
@@ -54,17 +70,16 @@ func (server *Server) DeletePurchase(c *gin.Context) {
 	log.Printf("check param %s", params.PrcNumber)
 	err = server.store.DeletePurchaseTx(c, args)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, errorResponse(err))
+		c.JSON(http.StatusBadRequest, errorResponse(err, http.StatusBadRequest))
 		return
 	}
 
 	resp := successResponse(
 		fmt.Sprintf("succes delete purchase number: %s", params.PrcNumber),
-		struct {
-			PurchaseNumber string `json:"purchase_number"`
-		}{
+		internal.DeletePurchaseItemsTxParams{
 			PurchaseNumber: params.PrcNumber,
 		},
+		http.StatusAccepted,
 	)
 	c.JSON(http.StatusAccepted, resp)
 }

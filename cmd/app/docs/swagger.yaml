@@ -1,4 +1,4 @@
-basePath: /api/v1
+basePath: /
 definitions:
   api.CreateUserRequest:
     properties:
@@ -20,7 +20,35 @@ definitions:
     - password
     - username
     type: object
-  api.CreateUserTxResult:
+  api.CreateUserResponse:
+    properties:
+      data:
+        $ref: '#/definitions/internal.CreateUserTxResult'
+      message:
+        type: string
+      status_code:
+        type: integer
+    type: object
+  api.DeletePurchaseSuccessResponse:
+    properties:
+      data:
+        $ref: '#/definitions/internal.DeletePurchaseItemsTxParams'
+      message:
+        type: string
+      status_code:
+        example: 200
+        type: integer
+    type: object
+  api.ErrorResponse:
+    properties:
+      message:
+        example: invalid request body
+        type: string
+      status_code:
+        example: 400
+        type: integer
+    type: object
+  internal.CreateUserTxResult:
     properties:
       email:
         type: string
@@ -28,22 +56,20 @@ definitions:
         type: string
       lastname:
         type: string
+      password_history_count:
+        type: string
       username:
         type: string
     type: object
-  api.ErrorResponse:
+  internal.DeletePurchaseItemsTxParams:
     properties:
-      code:
-        example: 400
-        type: integer
-      error:
-        example: invalid request body
+      purchase_number:
         type: string
     type: object
 externalDocs:
   description: OpenAPI
   url: https://swagger.io/resources/open-api/
-host: localhost:8080
+host: localhost:8000
 info:
   contact:
     email: support@swagger.io
@@ -57,7 +83,7 @@ info:
   title: Swagger LukeAul API
   version: "1.0"
 paths:
-  /purchase/createTx:
+  /purchase/create:
     post:
       consumes:
       - application/json
@@ -80,7 +106,32 @@ paths:
       summary: Create a new Purchase
       tags:
       - purchase
-  /users/createTx:
+  /purchase/delete/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Deletion proccess can only be done if it is not completed
+      parameters:
+      - description: purchase ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success delete purchase
+          schema:
+            $ref: '#/definitions/api.DeletePurchaseSuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Delete Purchase
+      tags:
+      - purchase
+  /users/create:
     post:
       consumes:
       - application/json
@@ -98,7 +149,7 @@ paths:
         "200":
           description: reponse if success creating new user
           schema:
-            $ref: '#/definitions/api.CreateUserTxResult'
+            $ref: '#/definitions/api.CreateUserResponse'
         "400":
           description: Bad Request
           schema:

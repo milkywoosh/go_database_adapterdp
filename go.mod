@@ -3,6 +3,7 @@ module github.com/luke_design_pattern
 go 1.23.4
 
 require (
+	github.com/gin-contrib/cors v1.7.5
 	github.com/gin-gonic/gin v1.10.1
 	github.com/godror/godror v0.45.0
 	github.com/jackc/pgx/v5 v5.7.4

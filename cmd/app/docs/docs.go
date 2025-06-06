@@ -24,7 +24,7 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/purchase/createTx": {
+        "/purchase/create": {
             "post": {
                 "description": "Create a new Purchase for detail",
                 "consumes": [
@@ -59,7 +59,45 @@ const docTemplate = `{
                 }
             }
         },
-        "/users/createTx": {
+        "/purchase/delete/{id}": {
+            "delete": {
+                "description": "Deletion proccess can only be done if it is not completed",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "purchase"
+                ],
+                "summary": "Delete Purchase",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "purchase ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success delete purchase",
+                        "schema": {
+                            "$ref": "#/definitions/api.DeletePurchaseSuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/users/create": {
             "post": {
                 "description": "Creating New User which never existed before",
                 "consumes": [
@@ -87,7 +125,7 @@ const docTemplate = `{
                     "200": {
                         "description": "reponse if success creating new user",
                         "schema": {
-                            "$ref": "#/definitions/api.CreateUserTxResult"
+                            "$ref": "#/definitions/api.CreateUserResponse"
                         }
                     },
                     "400": {
@@ -129,7 +167,49 @@ const docTemplate = `{
                 }
             }
         },
-        "api.CreateUserTxResult": {
+        "api.CreateUserResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/internal.CreateUserTxResult"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "status_code": {
+                    "type": "integer"
+                }
+            }
+        },
+        "api.DeletePurchaseSuccessResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/internal.DeletePurchaseItemsTxParams"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "status_code": {
+                    "type": "integer",
+                    "example": 200
+                }
+            }
+        },
+        "api.ErrorResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string",
+                    "example": "invalid request body"
+                },
+                "status_code": {
+                    "type": "integer",
+                    "example": 400
+                }
+            }
+        },
+        "internal.CreateUserTxResult": {
             "type": "object",
             "properties": {
                 "email": {
@@ -141,21 +221,19 @@ const docTemplate = `{
                 "lastname": {
                     "type": "string"
                 },
+                "password_history_count": {
+                    "type": "string"
+                },
                 "username": {
                     "type": "string"
                 }
             }
         },
-        "api.ErrorResponse": {
+        "internal.DeletePurchaseItemsTxParams": {
             "type": "object",
             "properties": {
-                "code": {
-                    "type": "integer",
-                    "example": 400
-                },
-                "error": {
-                    "type": "string",
-                    "example": "invalid request body"
+                "purchase_number": {
+                    "type": "string"
                 }
             }
         }
@@ -175,7 +253,7 @@ const docTemplate = `{
 var SwaggerInfo = &swag.Spec{
 	Version:          "1.0",
 	Host:             "localhost:8000",
-	BasePath:         "",
+	BasePath:         "/",
 	Schemes:          []string{},
 	Title:            "Swagger LukeAul API",
 	Description:      "This is a sample server celler server.",
