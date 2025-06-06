@@ -74,4 +74,4 @@ make sure it show where docs dir is located
 - run app
 
 swag init --generalInfo cmd/app/main.go --output cmd/app/docs --parseDependency --parseInternal
- swag init --generalInfo ./cmd/app/main.go --output ./cmd/app/docs --parseDependency --parseInternal
+swag init --generalInfo ./cmd/app/main.go --output ./cmd/app/docs --parseDependency --parseInternal

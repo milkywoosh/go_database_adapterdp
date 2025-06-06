@@ -2,6 +2,9 @@
 CONTAINER_NAME = pg17v1
 EXEC_DOCKER_PG17V1 = docker exec -it pg17v1 psql -U postgres -d toko_buku_online_nextjs -c
 
+USERNAME=tiok1
+
+
 # Default target
 .PHONY: all
 all: help
@@ -35,7 +38,7 @@ status:
 .PHONY: toko_buku_users
 toko_buku_users:
 	$(EXEC_DOCKER_PG17V1)\
-	"select * from users limit 5"
+	"select * from users where username='$(USERNAME)'"
 
 .PHONY: check_user_roles
 check_user_roles:
@@ -103,6 +106,16 @@ datatable_prc:
 	left join purchase_histories ph on ph.id = pi.purchase_history_id \
 	where pi.purchase_number IS NOT NULL \
 	"
-.PHONY: swagger
-swagger:
-	swag init --generalInfo cmd/app/main.go --output cmd/app/docs --parseDependency --parseInternal
+.PHONY: swagg
+swagg:
+	swag init --generalInfo ./cmd/app/main.go --output ./cmd/app/docs --parseDependency --parseInternal
+
+.PHONY: hit_create_user
+hit_create_user:
+	curl -X POST http://localhost:8000/users/create \
+	-H "accept: application/json" \
+	-H "Content-Type: application/json" \
+	-d @req_json/create_user_body.json
+.PHONY: run
+run:
+	go run ./cmd/app
