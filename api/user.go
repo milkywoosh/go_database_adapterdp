@@ -25,8 +25,6 @@ type CreateUserResponse struct {
 	StatusCode int                         `json:"status_code"`
 }
 
-
-
 // GetUser godoc
 // @Summary      Create New User of App
 // @Description  Creating New User which never existed before
@@ -36,7 +34,7 @@ type CreateUserResponse struct {
 // @Param        request body CreateUserRequest true 	"request for creating new user"
 // @Success      200 {object} CreateUserResponse 		"reponse if success creating new user"
 // @Failure 	 400 {object} ErrorResponse "Bad Request"
-// @Router       /users/create [post]
+// @Router       /user/create [post]
 func (server *Server) CreateUser(c *gin.Context) {
 
 	ctx := c.Request.Context()

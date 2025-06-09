@@ -39,27 +39,26 @@ const docTemplate = `{
                 "summary": "Create a new Purchase",
                 "parameters": [
                     {
-                        "type": "integer",
-                        "description": "purchase ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
+                        "description": "request for creating new purchase history",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal.CreatePurchaseHistoryParams"
+                        }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Success create new Purchase",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/internal.PurchaseHistory"
                         }
                     }
                 }
             }
         },
-        "/purchase/delete/{id}": {
+        "/purchase/delete/{purchase_number}": {
             "delete": {
                 "description": "Deletion proccess can only be done if it is not completed",
                 "consumes": [
@@ -209,6 +208,26 @@ const docTemplate = `{
                 }
             }
         },
+        "internal.CreatePurchaseHistoryParams": {
+            "type": "object",
+            "properties": {
+                "customer_id": {
+                    "description": "Date              *time.Time ==\u003e auto generate from golang time.Date",
+                    "type": "integer"
+                },
+                "purchase_number": {
+                    "description": "PRCBOOK_20250421_RANDOMCHAR",
+                    "type": "string"
+                },
+                "status": {
+                    "description": "pending or completed",
+                    "type": "string"
+                },
+                "total_price_payment": {
+                    "type": "number"
+                }
+            }
+        },
         "internal.CreateUserTxResult": {
             "type": "object",
             "properties": {
@@ -234,6 +253,29 @@ const docTemplate = `{
             "properties": {
                 "purchase_number": {
                     "type": "string"
+                }
+            }
+        },
+        "internal.PurchaseHistory": {
+            "type": "object",
+            "properties": {
+                "customer_id": {
+                    "type": "integer"
+                },
+                "date": {
+                    "type": "string"
+                },
+                "purchase_id": {
+                    "type": "integer"
+                },
+                "purchase_number": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "total_price_payment": {
+                    "type": "number"
                 }
             }
         }

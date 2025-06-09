@@ -119,7 +119,7 @@ swagg:
 
 .PHONY: hit_create_user
 hit_create_user:
-	curl -X POST http://localhost:8000/users/create \
+	curl -X POST http://localhost:8000/user/create \
 	-H "accept: application/json" \
 	-H "Content-Type: application/json" \
 	-d @req_json/create_user_body.json

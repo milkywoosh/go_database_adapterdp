@@ -48,6 +48,20 @@ definitions:
         example: 400
         type: integer
     type: object
+  internal.CreatePurchaseHistoryParams:
+    properties:
+      customer_id:
+        description: Date              *time.Time ==> auto generate from golang time.Date
+        type: integer
+      purchase_number:
+        description: PRCBOOK_20250421_RANDOMCHAR
+        type: string
+      status:
+        description: pending or completed
+        type: string
+      total_price_payment:
+        type: number
+    type: object
   internal.CreateUserTxResult:
     properties:
       email:
@@ -65,6 +79,21 @@ definitions:
     properties:
       purchase_number:
         type: string
+    type: object
+  internal.PurchaseHistory:
+    properties:
+      customer_id:
+        type: integer
+      date:
+        type: string
+      purchase_id:
+        type: integer
+      purchase_number:
+        type: string
+      status:
+        type: string
+      total_price_payment:
+        type: number
     type: object
 externalDocs:
   description: OpenAPI
@@ -89,24 +118,23 @@ paths:
       - application/json
       description: Create a new Purchase for detail
       parameters:
-      - description: purchase ID
-        in: path
-        name: id
+      - description: request for creating new purchase history
+        in: body
+        name: request
         required: true
-        type: integer
+        schema:
+          $ref: '#/definitions/internal.CreatePurchaseHistoryParams'
       produces:
       - application/json
       responses:
         "200":
-          description: OK
+          description: Success create new Purchase
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/internal.PurchaseHistory'
       summary: Create a new Purchase
       tags:
       - purchase
-  /purchase/delete/{id}:
+  /purchase/delete/{purchase_number}:
     delete:
       consumes:
       - application/json

@@ -15,8 +15,8 @@ import (
 // @Tags         purchase
 // @Accept       json
 // @Produce      json
-// @Param        id   path      int  true  "purchase ID"
-// @Success      200  {object}  map[string]string
+// @Param        request body internal.CreatePurchaseHistoryParams  true  "request for creating new purchase history"
+// @Success      200  {object} internal.PurchaseHistory "Success create new Purchase"
 // @Router       /purchase/create [post]
 func (server *Server) CreatePurchase(c *gin.Context) {
 
