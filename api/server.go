@@ -31,16 +31,30 @@ func NewServer(config *config.CredentialDB, store *internal.SQLStore) (*Server, 
 
 func (server *Server) setupRouter() {
 	router := gin.Default()
-
 	router.GET("/swagger/*any", swagger.WrapHandler(swaggerFiles.Handler))
-	// later kasih authorization routes
 
 	// controller rest API not method
 	router.POST("/users/create", server.CreateUser)
 
-	// controller PURCHASE
-	router.GET("/purchase/datatable", server.DatatablePurchase)
-	router.DELETE("/purchase/delete/:prc_number", server.DeletePurchase)
+	// double layer middleware [/rand/auth]
+
+	randRoute := router.Group("/rand")
+	randRoute.Use(RandomMiddleware("rand"))
+
+	randRoute1 := router.Group("/rand1")
+	randRoute1.Use(RandomMiddleware("rand1"))
+
+	// test double layer middleware grouping
+	authRoute := randRoute.Group("/auth")
+	authRoute.Use(authMiddleware())
+
+	authRoute1 := randRoute1.Group("/auth")
+	authRoute1.Use(authMiddleware())
+
+	authRoute.GET("/purchase/datatable", server.DatatablePurchase)
+	authRoute.DELETE("/purchase/delete/:prc_number", server.DeletePurchase)
+
+	authRoute1.DELETE("/purchase/delete/:prc_number", server.DeletePurchase)
 
 	server.router = router
 }
