@@ -64,11 +64,11 @@ type BookToPurchase struct {
 type ListBooksToPurchase []BookToPurchase
 
 type CreateBookToPurchaseParams struct {
-	BookID            int
-	PurchaseHistoryID int
-	Qty               int
-	TotalPrice        float64
-	PurchaseNumber    string
+	BookID            int     `json:"book_id"`
+	PurchaseHistoryID int     `json:"purchase_history_id"`
+	Qty               int     `json:"qty"`
+	TotalPrice        float64 `json:"total_price"`
+	PurchaseNumber    string  `json:"purchase_number"`
 }
 
 type CreatePurchaseHistoryParams struct {

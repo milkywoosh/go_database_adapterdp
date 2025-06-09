@@ -52,8 +52,8 @@ func (server *Server) setupRouter() {
 	// authRoute1.Use(authMiddleware())
 
 	router.POST("/purchase/create", server.CreatePurchase)
-	router.GET("/purchase/datatable", server.DatatablePurchase)
-	router.DELETE("/purchase/delete/:prc_number", server.DeletePurchase)
+	router.GET("/purchase/datatable/:purchase_number", server.DatatablePurchase)
+	router.DELETE("/purchase/delete/:purchase_number", server.DeletePurchase)
 
 	// authRoute1.DELETE("/purchase/delete/:prc_number", server.DeletePurchase)
 

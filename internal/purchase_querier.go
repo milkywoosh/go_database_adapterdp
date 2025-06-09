@@ -332,29 +332,50 @@ func (q *PurchaseQueries) AdjustStockBook(ctx context.Context, bookID int, corre
 	return nil
 }
 
-func (q *PurchaseQueries) Datatable(ctx context.Context) ([]PurchaseDatatable, error) {
+func (q *PurchaseQueries) Datatable(ctx context.Context, prc_number string) ([]PurchaseDatatable, error) {
 
-	queryDatatable := `
-		select 
-			pi.purchase_number as purchase_number,
-			pi.total_price,
-			pi.qty,
-			b.title,
-			b.price as price_each,
-			ph.date_of_sale,
-			ph.status
-		from purchase_items pi
-		left join books b on b.id = pi.book_id 
-		left join purchase_histories ph on ph.id = pi.purchase_history_id
-		where pi.purchase_number IS NOT NULL
-	`
+	var queryDatatable string
+
+	if prc_number == "" {
+		queryDatatable = `
+			select 
+				pi.purchase_number as purchase_number,
+				pi.total_price,
+				pi.qty,
+				b.title,
+				b.price as price_each,
+				ph.date_of_sale,
+				ph.status
+			from purchase_items pi
+			left join books b on b.id = pi.book_id 
+			left join purchase_histories ph on ph.id = pi.purchase_history_id
+			where pi.purchase_number IS NOT NULL
+		`
+	} else {
+		queryDatatable = fmt.Sprintf(`
+			select 
+				pi.purchase_number as purchase_number,
+				pi.total_price,
+				pi.qty,
+				b.title,
+				b.price as price_each,
+				ph.date_of_sale,
+				ph.status
+			from purchase_items pi
+			left join books b on b.id = pi.book_id 
+			left join purchase_histories ph on ph.id = pi.purchase_history_id
+			where pi.purchase_number IS NOT NULL
+				and pi.purchase_number = '%s'
+		`, prc_number)
+	}
+
 	rows, err := q.db.QueryContext(ctx, queryDatatable)
 	if err != nil {
 		return nil, fmt.Errorf("err query ctx Prc Datatable: %w", err)
 	}
 	defer rows.Close()
 
-	var PrcDatas []PurchaseDatatable
+	var PrcDatas []PurchaseDatatable = []PurchaseDatatable{}
 
 	for rows.Next() {
 		var PrcData PurchaseDatatable

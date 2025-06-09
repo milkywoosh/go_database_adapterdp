@@ -49,9 +49,22 @@ func (server *Server) CreatePurchase(c *gin.Context) {
 
 }
 
+type DatatablePurchaseParam struct {
+	PurchaseNumber string `uri:"purchase_number"`
+}
+
 func (server *Server) DatatablePurchase(c *gin.Context) {
 
-	rowsResult, err := server.store.PurchaseQueries.Datatable(c)
+	var params_uri DatatablePurchaseParam
+
+	err := c.ShouldBindUri(&params_uri)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, errorResponse(err, http.StatusBadRequest))
+		return
+	}
+
+	log.Printf("check URI ===> %s", params_uri.PurchaseNumber)
+	rowsResult, err := server.store.PurchaseQueries.Datatable(c, params_uri.PurchaseNumber)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, err)
 		return
@@ -61,7 +74,7 @@ func (server *Server) DatatablePurchase(c *gin.Context) {
 }
 
 type DeletePRCParams struct {
-	PrcNumber string `uri:"prc_number" binding:"required"`
+	PrcNumber string `uri:"purchase_number" binding:"required"`
 }
 
 type DeletePurchaseSuccessResponse struct {
@@ -79,7 +92,7 @@ type DeletePurchaseSuccessResponse struct {
 // @Param        id   path      int  true  "purchase ID"
 // @Success      200  {object}  DeletePurchaseSuccessResponse "Success delete purchase"
 // @Failure 	 400 {object} ErrorResponse "Bad Request"
-// @Router       /purchase/delete/{id} [delete]
+// @Router       /purchase/delete/{purchase_number} [delete]
 func (server *Server) DeletePurchase(c *gin.Context) {
 	// uri
 	// purchase/delete/:prc_number
@@ -94,7 +107,6 @@ func (server *Server) DeletePurchase(c *gin.Context) {
 		PurchaseNumber: params.PrcNumber,
 	}
 
-	log.Printf("check param %s", params.PrcNumber)
 	err = server.store.DeletePurchaseTx(c, args)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, errorResponse(err, http.StatusBadRequest))
