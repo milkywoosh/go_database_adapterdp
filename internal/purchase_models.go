@@ -11,12 +11,12 @@ type PurchaseBook struct {
 }
 
 type PurchaseHistory struct {
-	PurchaseID        int
-	Date              *time.Time
-	CustomerID        int
-	TotalPricePayment float64
-	Status            string
-	PurchaseNumber    string
+	PurchaseID        int        `json:"purchase_id"`
+	Date              *time.Time `json:"date"`
+	CustomerID        int        `json:"customer_id"`
+	TotalPricePayment float64    `json:"total_price_payment"`
+	Status            string     `json:"status"`
+	PurchaseNumber    string     `json:"purchase_number"`
 }
 
 type PurchaseItem struct {
@@ -51,6 +51,7 @@ type CreatePurchaseBookParams struct {
 }
 
 type CreatePurchaseHistoryResult struct {
+	PurchaseHistoryID int
 }
 
 type BookToPurchase struct {
@@ -72,10 +73,10 @@ type CreateBookToPurchaseParams struct {
 
 type CreatePurchaseHistoryParams struct {
 	// Date              *time.Time ==> auto generate from golang time.Date
-	CustomerID        int
-	TotalPricePayment float64
-	Status            string // pending or completed
-	PurchaseNumber    string // PRCBOOK_20250421_RANDOMCHAR
+	CustomerID        int     `json:"customer_id"`
+	TotalPricePayment float64 `json:"total_price_payment"`
+	Status            string  `json:"status"`          // pending or completed
+	PurchaseNumber    string  `json:"purchase_number"` // PRCBOOK_20250421_RANDOMCHAR
 }
 
 type PurchaseDatatable struct {

@@ -106,6 +106,13 @@ datatable_prc:
 	left join purchase_histories ph on ph.id = pi.purchase_history_id \
 	where pi.purchase_number IS NOT NULL \
 	"
+.PHONY: hit_create_prc_history
+hit_create_prc_history:
+	curl -X POST http://localhost:8000/purchase/create \
+	-H "accept: application/json" \
+	-H "Content-Type: application/json" \
+	-d @req_json/create_prc_history_body.json
+	
 .PHONY: swagg
 swagg:
 	swag init --generalInfo ./cmd/app/main.go --output ./cmd/app/docs --parseDependency --parseInternal

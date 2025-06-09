@@ -148,3 +148,20 @@ func (store *PurchaseStore) FinalizePurchaseTx(ctx context.Context, purchaseNumb
 
 	return fmt.Errorf("not implemented yet %v", err)
 }
+
+func (store *PurchaseStore) CreatePurchaseHistoryTx(ctx context.Context, arg CreatePurchaseHistoryParams) (PurchaseHistory, error) {
+	var i PurchaseHistory
+
+	err := store.execTx(ctx, func(pq *PurchaseQueries) error {
+		var err error
+
+		i, err = pq.CreatePurchaseHistory(ctx, arg)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	return i, err
+}

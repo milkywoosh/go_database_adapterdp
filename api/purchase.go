@@ -18,7 +18,34 @@ import (
 // @Param        id   path      int  true  "purchase ID"
 // @Success      200  {object}  map[string]string
 // @Router       /purchase/create [post]
-func (server *Server) CreatePurchase(ctx *gin.Context) {
+func (server *Server) CreatePurchase(c *gin.Context) {
+
+	ctx := c.Request.Context()
+
+	var reqPrcHistory internal.CreatePurchaseHistoryParams
+	var err error
+	var respPrcHistory internal.PurchaseHistory
+
+	err = c.ShouldBindJSON(&reqPrcHistory)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, errorResponse(err, http.StatusBadRequest))
+		return
+	}
+
+	// generate automatically
+	reqPrcHistory.PurchaseNumber = internal.GenerateRandomTrxNumber(reqPrcHistory.CustomerID)
+	log.Printf("check req %v", reqPrcHistory)
+
+	respPrcHistory, err = server.store.CreatePurchaseHistoryTx(ctx, reqPrcHistory)
+	if err != nil {
+		c.JSON(http.StatusConflict, errorResponse(err, http.StatusConflict))
+		return
+	}
+	c.JSON(http.StatusAccepted, successResponse(
+		"success create purchase history",
+		respPrcHistory,
+		http.StatusAccepted,
+	))
 
 }
 
